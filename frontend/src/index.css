@@ -87,6 +87,10 @@ body {
     color: #555;
   }
 
+  #print-header img {
+    display: inline-block;
+  }
+
   #print-footer {
     text-align: center;
     border-top: 1px solid #999;
@@ -98,6 +102,34 @@ body {
 
   #print-footer .page-number:after {
     content: counter(page);
+  }
+
+  .questionario-campo {
+    border-bottom: 1px solid #ccc;
+    padding: 1mm 0;
+    margin-bottom: 1mm;
+  }
+
+  .questionario-campo label {
+    font-weight: 600;
+    font-size: 9pt;
+    display: block;
+    margin-bottom: 0.5mm;
+  }
+
+  .questionario-campo .linha-resposta {
+    min-height: 10mm;
+  }
+
+  .questionario-opcao {
+    display: inline-block;
+    margin-right: 3mm;
+    margin-bottom: 1mm;
+  }
+
+  .questionario-opcao input[type="checkbox"],
+  .questionario-opcao input[type="radio"] {
+    margin-right: 0.5mm;
   }
 }
 

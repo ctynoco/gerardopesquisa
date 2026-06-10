@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Box, Typography, Button, Card, CardContent, Tabs, Tab, FormControl, InputLabel, Select, MenuItem, Chip, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
+import { Box, Typography, Button, Card, CardContent, Tabs, Tab, FormControl, InputLabel, Select, MenuItem, Chip, Table, TableHead, TableBody, TableRow, TableCell, ToggleButtonGroup, ToggleButton, Paper } from '@mui/material'
 import { Pie, Bar } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js'
 import api from '../services/api'
+import LogoUpload, { getLogo } from '../components/LogoUpload'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import PrintIcon from '@mui/icons-material/Print'
 import TableChartIcon from '@mui/icons-material/TableChart'
@@ -18,7 +19,9 @@ export default function Relatorios() {
   const [pesquisas, setPesquisas] = useState([])
   const [pesquisaId, setPesquisaId] = useState('')
   const [estatisticas, setEstatisticas] = useState(null)
+  const [perguntasModelo, setPerguntasModelo] = useState([])
   const [aba, setAba] = useState(0)
+  const [modo, setModo] = useState('com_dados')
   const printRef = useRef()
 
   useEffect(() => { api.get('/pesquisas?limit=100').then((r) => setPesquisas(r.data.pesquisas)) }, [])
@@ -26,6 +29,12 @@ export default function Relatorios() {
   async function carregar() {
     const r = await api.get(`/respostas/estatisticas/${pesquisaId}`)
     setEstatisticas(r.data)
+    try {
+      const p = await api.get(`/perguntas?pesquisa_id=${pesquisaId}`)
+      setPerguntasModelo(p.data.perguntas || p.data || [])
+    } catch {
+      setPerguntasModelo([])
+    }
   }
 
   const perguntas = estatisticas?.perguntas?.filter((p) => p.contagem) || []
@@ -43,6 +52,90 @@ export default function Relatorios() {
 
   function imprimir() {
     window.print()
+  }
+
+  function ModeloQuestionario() {
+    const logo = getLogo()
+    return (
+      <Box>
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <ToggleButtonGroup value={modo} exclusive onChange={(_, v) => v && setModo(v)} size="small">
+            <ToggleButton value="com_dados" sx={{ fontSize: '0.7rem' }}>Com Dados</ToggleButton>
+            <ToggleButton value="sem_dados" sx={{ fontSize: '0.7rem' }}>Sem Dados</ToggleButton>
+          </ToggleButtonGroup>
+          <LogoUpload size={80} />
+        </Box>
+
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', borderRadius: 2, backgroundColor: '#fff' }} className="a4-page">
+          <Box id="print-header" className="print-only" sx={{ textAlign: 'center', mb: 3 }}>
+            {logo && (
+              <Box sx={{ mb: 1 }}>
+                <img src={logo} alt="Logomarca" style={{ maxWidth: 120, maxHeight: 120 }} />
+              </Box>
+            )}
+            <Typography variant="h4" sx={{ fontSize: '16pt', fontWeight: 700 }}>Questionário de Pesquisa</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {pesquisas.find((p) => String(p.id) === String(pesquisaId))?.titulo || `Pesquisa #${pesquisaId}`}
+            </Typography>
+          </Box>
+
+          {modo === 'com_dados' ? (
+            perguntas.map((p) => {
+              const total = p.contagem.reduce((s, c) => s + Number(c.quantidade), 0)
+              return (
+                <Box key={p.pergunta_id} className="questionario-campo" sx={{ mb: 2, pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>{p.titulo}</Typography>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', p: 0.5 }}>Opção</TableCell>
+                        <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', p: 0.5 }} align="right">N</TableCell>
+                        <TableCell sx={{ fontWeight: 600, fontSize: '0.7rem', p: 0.5 }} align="right">%</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {p.contagem.map((c) => (
+                        <TableRow key={c.valor}>
+                          <TableCell sx={{ fontSize: '0.75rem', p: 0.5 }}>{c.valor}</TableCell>
+                          <TableCell sx={{ fontSize: '0.75rem', p: 0.5 }} align="right">{c.quantidade}</TableCell>
+                          <TableCell sx={{ fontSize: '0.75rem', p: 0.5 }} align="right">{total > 0 ? `${((Number(c.quantidade) / total) * 100).toFixed(1)}%` : '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Box>
+              )
+            })
+          ) : (
+            perguntasModelo.map((p, i) => (
+              <Box key={p.id || i} className="questionario-campo" sx={{ mb: 2, pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>{p.titulo}</Typography>
+                <Box className="linha-resposta" sx={{ minHeight: 40 }}>
+                  {p.opcoes?.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 0.5 }}>
+                      {p.opcoes.map((o, oi) => (
+                        <Box key={oi} className="questionario-opcao" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 2, mb: 0.5 }}>
+                          <Box component="span" sx={{ width: 14, height: 14, border: '1.5px solid #666', borderRadius: p.tipo === 'multipla_escolha' ? 0.5 : '50%', display: 'inline-block', mr: 0.5, verticalAlign: 'middle' }} />
+                          <Typography variant="caption" sx={{ fontSize: '8pt' }}>{o}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box sx={{ borderBottom: '1px dashed #999', height: 30, mt: 1, width: '100%' }} />
+                  )}
+                </Box>
+              </Box>
+            ))
+          )}
+
+          <Box id="print-footer" className="print-only" sx={{ textAlign: 'center', borderTop: '1px solid #999', pt: 1, mt: 3 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '8pt' }}>
+              Instituto de Pesquisa Eleitoral | Questionário gerado em {new Date().toLocaleString('pt-BR')}
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    )
   }
 
   return (
@@ -72,7 +165,6 @@ export default function Relatorios() {
 
       {estatisticas && (
         <Box ref={printRef}>
-          {/* Cabeçalho A4 */}
           <Box id="print-header" className="print-only">
             <Typography variant="h1">Relatório de Pesquisa Eleitoral</Typography>
             <Typography variant="body2">Pesquisa #{pesquisaId} | {new Date().toLocaleDateString('pt-BR')}</Typography>
@@ -83,42 +175,67 @@ export default function Relatorios() {
             <Tabs value={aba} onChange={(_, v) => setAba(v)} sx={{ mb: 2 }}>
               <Tab label="Gráficos" />
               <Tab label="Tabela" />
+              <Tab label="Modelo de Questionário" />
             </Tabs>
           </Box>
 
-          {/* Conteúdo que aparece em ambos */}
-          <Box sx={{ display: aba === 1 || true ? 'block' : 'none' }}>
-            {perguntas.map((p) => {
-              const total = p.contagem.reduce((s, c) => s + Number(c.quantidade), 0)
-              return (
-                <Card key={p.pergunta_id} sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                  <CardContent sx={{ p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
-                    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>{p.titulo}</Typography>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem', p: 0.75 }}>Opção</TableCell>
-                          <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem', p: 0.75 }} align="right">N</TableCell>
-                          <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem', p: 0.75 }} align="right">%</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {p.contagem.map((c) => (
-                          <TableRow key={c.valor}>
-                            <TableCell sx={{ fontSize: '0.8rem', p: 0.75 }}>{c.valor}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8rem', p: 0.75 }} align="right">{c.quantidade}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8rem', p: 0.75 }} align="right">{total > 0 ? `${((Number(c.quantidade) / total) * 100).toFixed(1)}%` : '-'}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </Box>
+          {aba === 0 && (
+            <Box>
+              {perguntas.map((p) => {
+                const total = p.contagem.reduce((s, c) => s + Number(c.quantidade), 0)
+                const data = {
+                  labels: p.contagem.map((c) => c.valor),
+                  datasets: [{ data: p.contagem.map((c) => c.quantidade), backgroundColor: cores.slice(0, p.contagem.length), borderWidth: 0 }],
+                }
+                return (
+                  <Card key={p.pergunta_id} sx={{ mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <CardContent sx={{ p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>{p.titulo}</Typography>
+                      <Box sx={{ maxWidth: 400, mx: 'auto' }}>
+                        <Pie data={data} options={{ plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, maintainAspectRatio: true }} />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </Box>
+          )}
 
-          {/* Rodapé A4 */}
+          {aba === 1 && (
+            <Box>
+              {perguntas.map((p) => {
+                const total = p.contagem.reduce((s, c) => s + Number(c.quantidade), 0)
+                return (
+                  <Card key={p.pergunta_id} sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <CardContent sx={{ p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>{p.titulo}</Typography>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem', p: 0.75 }}>Opção</TableCell>
+                            <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem', p: 0.75 }} align="right">N</TableCell>
+                            <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem', p: 0.75 }} align="right">%</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {p.contagem.map((c) => (
+                            <TableRow key={c.valor}>
+                              <TableCell sx={{ fontSize: '0.8rem', p: 0.75 }}>{c.valor}</TableCell>
+                              <TableCell sx={{ fontSize: '0.8rem', p: 0.75 }} align="right">{c.quantidade}</TableCell>
+                              <TableCell sx={{ fontSize: '0.8rem', p: 0.75 }} align="right">{total > 0 ? `${((Number(c.quantidade) / total) * 100).toFixed(1)}%` : '-'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </Box>
+          )}
+
+          {aba === 2 && <ModeloQuestionario />}
+
           <Box id="print-footer" className="print-only">
             <Typography variant="caption">Instituto de Pesquisa Eleitoral | Relatório gerado em {new Date().toLocaleString('pt-BR')}</Typography>
             <Typography variant="caption">Página <span className="page-number" /></Typography>
