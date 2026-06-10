@@ -24,8 +24,14 @@ export default function Login() {
     setErro('')
     try {
       await login(telefone, senha)
-    } catch {
-      setErro('Credenciais inválidas')
+    } catch (err) {
+      if (err.response?.data?.error) {
+        setErro(err.response.data.error)
+      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        setErro('Servidor indisponível. Tente novamente em instantes.')
+      } else {
+        setErro('Erro ao conectar. Verifique sua conexão.')
+      }
     } finally {
       setLoading(false)
     }
