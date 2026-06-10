@@ -23,18 +23,18 @@ describe('authController - register', () => {
   beforeEach(() => { jest.clearAllMocks() })
 
   it('deve registrar um novo usuário com sucesso', async () => {
-    const req = mockReq({ nome: 'João', email: 'joao@teste.com', senha: '123456' })
+    const req = mockReq({ nome: 'João', telefone: '(85) 996962828', senha: '123456' })
     const res = mockRes()
     const next = jest.fn()
 
     db.query.mockResolvedValueOnce({ rows: [] })
-    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', email: 'joao@teste.com', perfil: 'entrevistador', created_at: new Date() }] })
+    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', telefone: '(85) 996962828', perfil: 'entrevistador', created_at: new Date() }] })
 
     await register(req, res, next)
 
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      usuario: expect.objectContaining({ nome: 'João', email: 'joao@teste.com' }),
+      usuario: expect.objectContaining({ nome: 'João' }),
     }))
   })
 
@@ -46,11 +46,11 @@ describe('authController - register', () => {
     await register(req, res, next)
 
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith({ error: 'Nome, email e senha são obrigatórios' })
+    expect(res.json).toHaveBeenCalledWith({ error: 'Nome, telefone e senha são obrigatórios' })
   })
 
-  it('deve retornar 409 se email já existir', async () => {
-    const req = mockReq({ nome: 'João', email: 'existente@teste.com', senha: '123456' })
+  it('deve retornar 409 se telefone já existir', async () => {
+    const req = mockReq({ nome: 'João', telefone: '(85) 996962828', senha: '123456' })
     const res = mockRes()
     const next = jest.fn()
 
@@ -59,16 +59,16 @@ describe('authController - register', () => {
     await register(req, res, next)
 
     expect(res.status).toHaveBeenCalledWith(409)
-    expect(res.json).toHaveBeenCalledWith({ error: 'Email já cadastrado' })
+    expect(res.json).toHaveBeenCalledWith({ error: 'Telefone já cadastrado' })
   })
 
   it('deve usar perfil padrão entrevistador se não fornecido', async () => {
-    const req = mockReq({ nome: 'João', email: 'joao@teste.com', senha: '123456' })
+    const req = mockReq({ nome: 'João', telefone: '(85) 123456789', senha: '123456' })
     const res = mockRes()
     const next = jest.fn()
 
     db.query.mockResolvedValueOnce({ rows: [] })
-    db.query.mockResolvedValueOnce({ rows: [{ id: 2, nome: 'João', email: 'joao@teste.com', perfil: 'entrevistador' }] })
+    db.query.mockResolvedValueOnce({ rows: [{ id: 2, nome: 'João', telefone: '(85) 123456789', perfil: 'entrevistador' }] })
 
     await register(req, res, next)
 
@@ -81,11 +81,11 @@ describe('authController - login', () => {
 
   it('deve fazer login com sucesso', async () => {
     const senhaHash = bcrypt.hashSync('123456', 10)
-    const req = mockReq({ email: 'joao@teste.com', senha: '123456' })
+    const req = mockReq({ telefone: '(85) 996962828', senha: '123456' })
     const res = mockRes()
     const next = jest.fn()
 
-    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', email: 'joao@teste.com', senha: senhaHash, perfil: 'entrevistador', ativo: true }] })
+    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', telefone: '(85) 996962828', senha: senhaHash, perfil: 'entrevistador', ativo: true }] })
 
     await login(req, res, next)
 
@@ -95,8 +95,8 @@ describe('authController - login', () => {
     }))
   })
 
-  it('deve retornar 400 se email/senha não forem fornecidos', async () => {
-    const req = mockReq({ email: 'joao@teste.com' })
+  it('deve retornar 400 se telefone/senha não forem fornecidos', async () => {
+    const req = mockReq({ telefone: '(85) 996962828' })
     const res = mockRes()
     const next = jest.fn()
 
@@ -105,8 +105,8 @@ describe('authController - login', () => {
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
-  it('deve retornar 401 se email não existir', async () => {
-    const req = mockReq({ email: 'naoexiste@teste.com', senha: '123456' })
+  it('deve retornar 401 se telefone não existir', async () => {
+    const req = mockReq({ telefone: '(85) 000000000', senha: '123456' })
     const res = mockRes()
     const next = jest.fn()
 
@@ -118,11 +118,11 @@ describe('authController - login', () => {
   })
 
   it('deve retornar 401 se usuário estiver inativo', async () => {
-    const req = mockReq({ email: 'inativo@teste.com', senha: '123456' })
+    const req = mockReq({ telefone: '(85) 996962828', senha: '123456' })
     const res = mockRes()
     const next = jest.fn()
 
-    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Inativo', email: 'inativo@teste.com', senha: 'hash', perfil: 'entrevistador', ativo: false }] })
+    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Inativo', telefone: '(85) 996962828', senha: 'hash', perfil: 'entrevistador', ativo: false }] })
 
     await login(req, res, next)
 
@@ -132,11 +132,11 @@ describe('authController - login', () => {
 
   it('deve retornar 401 se senha estiver errada', async () => {
     const senhaHash = bcrypt.hashSync('senha_correta', 10)
-    const req = mockReq({ email: 'joao@teste.com', senha: 'senha_errada' })
+    const req = mockReq({ telefone: '(85) 996962828', senha: 'senha_errada' })
     const res = mockRes()
     const next = jest.fn()
 
-    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', email: 'joao@teste.com', senha: senhaHash, perfil: 'entrevistador', ativo: true }] })
+    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', telefone: '(85) 996962828', senha: senhaHash, perfil: 'entrevistador', ativo: true }] })
 
     await login(req, res, next)
 
@@ -152,7 +152,7 @@ describe('authController - perfil', () => {
     const res = mockRes()
     const next = jest.fn()
 
-    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', email: 'joao@teste.com', perfil: 'entrevistador', ativo: true, created_at: new Date() }] })
+    db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'João', telefone: '(85) 996962828', perfil: 'entrevistador', ativo: true, created_at: new Date() }] })
 
     await perfil(req, res, next)
 

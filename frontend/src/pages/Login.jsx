@@ -4,7 +4,7 @@ import '../styles/login.css'
 
 export default function Login() {
   const { login } = useAuth()
-  const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
 
@@ -12,7 +12,7 @@ export default function Login() {
     e.preventDefault()
     try {
       setErro('')
-      await login(email, senha)
+      await login(telefone, senha)
     } catch {
       setErro('Credenciais inválidas')
     }
@@ -26,8 +26,8 @@ export default function Login() {
         {erro && <p className="login-erro">{erro}</p>}
         <form onSubmit={handleSubmit}>
           <input
-            type="email" placeholder="Email" value={email}
-            onChange={(e) => setEmail(e.target.value)} required
+            type="tel" placeholder="Telefone" value={telefone}
+            onChange={(e) => setTelefone(e.target.value)} required
           />
           <input
             type="password" placeholder="Senha" value={senha}

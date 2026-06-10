@@ -67,11 +67,11 @@ describe('API Integration Tests', () => {
   describe('POST /api/auth/register', () => {
     it('deve registrar usuário com sucesso', async () => {
       db.query.mockResolvedValueOnce({ rows: [] })
-      db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Teste', email: 'teste@teste.com', perfil: 'entrevistador', created_at: new Date() }] })
+      db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Teste', telefone: '(85) 996962828', perfil: 'entrevistador', created_at: new Date() }] })
 
       const res = await request(app)
         .post('/api/auth/register')
-        .send({ nome: 'Teste', email: 'teste@teste.com', senha: '123456' })
+        .send({ nome: 'Teste', telefone: '(85) 996962828', senha: '123456' })
 
       expect(res.status).toBe(201)
       expect(res.body.usuario).toBeDefined()
@@ -92,12 +92,12 @@ describe('API Integration Tests', () => {
       const senhaHash = bcrypt.hashSync('123456', 10)
 
       db.query.mockResolvedValueOnce({
-        rows: [{ id: 1, nome: 'Teste', email: 'teste@teste.com', senha: senhaHash, perfil: 'entrevistador', ativo: true }],
+        rows: [{ id: 1, nome: 'Teste', telefone: '(85) 996962828', senha: senhaHash, perfil: 'entrevistador', ativo: true }],
       })
 
       const res = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'teste@teste.com', senha: '123456' })
+        .send({ telefone: '(85) 996962828', senha: '123456' })
 
       expect(res.status).toBe(200)
       expect(res.body.token).toBeDefined()
@@ -109,7 +109,7 @@ describe('API Integration Tests', () => {
 
       const res = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'wrong@teste.com', senha: 'wrong' })
+        .send({ telefone: '(85) 000000000', senha: 'wrong' })
 
       expect(res.status).toBe(401)
     })
@@ -142,7 +142,7 @@ describe('API Integration Tests', () => {
       const jwt = require('jsonwebtoken')
       const token = jwt.sign({ id: 2, perfil: 'entrevistador' }, process.env.JWT_SECRET)
 
-      db.query.mockResolvedValue({ rows: [{ id: 2, nome: 'Entrevistador', email: 'ent@teste.com', perfil: 'entrevistador', ativo: true }] })
+      db.query.mockResolvedValue({ rows: [{ id: 2, nome: 'Entrevistador', telefone: '(85) 123456789', perfil: 'entrevistador', ativo: true }] })
 
       const res = await request(app)
         .get('/api/usuarios')
@@ -159,7 +159,7 @@ describe('API Integration Tests', () => {
 
       db.query.mockReset()
       db.query
-        .mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Admin', email: 'admin@teste.com', perfil: 'admin', ativo: true }] })
+        .mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Admin', telefone: '(85) 996962828', perfil: 'admin', ativo: true }] })
         .mockResolvedValueOnce({ rows: [{ id: 1, titulo: 'Pesquisa Teste' }] })
 
       const createRes = await request(app)
@@ -171,7 +171,7 @@ describe('API Integration Tests', () => {
 
       db.query.mockReset()
       db.query
-        .mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Admin', email: 'admin@teste.com', perfil: 'admin', ativo: true }] })
+        .mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Admin', telefone: '(85) 996962828', perfil: 'admin', ativo: true }] })
         .mockResolvedValueOnce({ rows: [{ id: 1, titulo: 'Pesquisa Teste', criador: 'Admin', total_entrevistados: 0 }] })
         .mockResolvedValueOnce({ rows: [{ count: '1' }] })
 

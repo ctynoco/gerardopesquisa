@@ -26,7 +26,7 @@ describe('usuariosController', () => {
       const res = mockRes()
       const next = jest.fn()
 
-      db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Admin', email: 'admin@teste.com' }] })
+      db.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Admin', telefone: '(85) 996962828' }] })
 
       await listar(req, res, next)
 
@@ -36,12 +36,12 @@ describe('usuariosController', () => {
 
   describe('criar', () => {
     it('deve criar usuário com sucesso', async () => {
-      const req = mockReq({ nome: 'Novo', email: 'novo@teste.com', senha: '123456' })
+      const req = mockReq({ nome: 'Novo', telefone: '(85) 123456789', senha: '123456' })
       const res = mockRes()
       const next = jest.fn()
 
       db.query.mockResolvedValueOnce({ rows: [] })
-      db.query.mockResolvedValueOnce({ rows: [{ id: 2, nome: 'Novo', email: 'novo@teste.com' }] })
+      db.query.mockResolvedValueOnce({ rows: [{ id: 2, nome: 'Novo', telefone: '(85) 123456789' }] })
 
       await criar(req, res, next)
 
@@ -49,7 +49,7 @@ describe('usuariosController', () => {
     })
 
     it('deve retornar 400 se faltar campos', async () => {
-      const req = mockReq({ nome: 'Sem email' })
+      const req = mockReq({ nome: 'Sem telefone' })
       const res = mockRes()
       const next = jest.fn()
 
@@ -58,8 +58,8 @@ describe('usuariosController', () => {
       expect(res.status).toHaveBeenCalledWith(400)
     })
 
-    it('deve retornar 409 se email já existir', async () => {
-      const req = mockReq({ nome: 'Duplicado', email: 'existente@teste.com', senha: '123456' })
+    it('deve retornar 409 se telefone já existir', async () => {
+      const req = mockReq({ nome: 'Duplicado', telefone: '(85) 996962828', senha: '123456' })
       const res = mockRes()
       const next = jest.fn()
 

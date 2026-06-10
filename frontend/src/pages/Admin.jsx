@@ -6,7 +6,7 @@ export default function Admin() {
   const [usuarios, setUsuarios] = useState([])
   const [auditoria, setAuditoria] = useState([])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', perfil: 'entrevistador' })
+  const [form, setForm] = useState({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' })
   const [editando, setEditando] = useState(null)
 
   useEffect(() => { carregarUsuarios(); carregarAuditoria() }, [])
@@ -29,13 +29,13 @@ export default function Admin() {
     e.preventDefault()
     try {
       if (editando) {
-        await api.put(`/usuarios/${editando}`, { nome: form.nome, email: form.email, perfil: form.perfil })
+        await api.put(`/usuarios/${editando}`, { nome: form.nome, telefone: form.telefone, perfil: form.perfil })
       } else {
         await api.post('/usuarios', form)
       }
       setShowForm(false)
       setEditando(null)
-      setForm({ nome: '', email: '', senha: '', perfil: 'entrevistador' })
+      setForm({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' })
       carregarUsuarios()
     } catch (err) {
       alert(err.response?.data?.error || 'Erro ao salvar')
@@ -44,7 +44,7 @@ export default function Admin() {
 
   function editar(u) {
     setEditando(u.id)
-    setForm({ nome: u.nome, email: u.email, senha: '', perfil: u.perfil })
+    setForm({ nome: u.nome, telefone: u.telefone, senha: '', perfil: u.perfil })
     setShowForm(true)
   }
 
@@ -75,7 +75,7 @@ export default function Admin() {
         <>
           <div className="page-header">
             <h2 style={{ fontSize: 18, margin: 0 }}>Gerenciar Usuários</h2>
-            <button className="btn" onClick={() => { setShowForm(true); setEditando(null); setForm({ nome: '', email: '', senha: '', perfil: 'entrevistador' }) }}>
+            <button className="btn" onClick={() => { setShowForm(true); setEditando(null); setForm({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' }) }}>
               Novo Usuário
             </button>
           </div>
@@ -83,7 +83,7 @@ export default function Admin() {
           {showForm && (
             <form className="form" onSubmit={salvar}>
               <input placeholder="Nome" value={form.nome} onChange={(e) => setForm({...form, nome: e.target.value})} required />
-              <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} required />
+              <input type="tel" placeholder="Telefone" value={form.telefone} onChange={(e) => setForm({...form, telefone: e.target.value})} required />
               {!editando && <input type="password" placeholder="Senha" value={form.senha} onChange={(e) => setForm({...form, senha: e.target.value})} required />}
               <select value={form.perfil} onChange={(e) => setForm({...form, perfil: e.target.value})}>
                 <option value="entrevistador">Entrevistador</option>
@@ -97,12 +97,12 @@ export default function Admin() {
           )}
 
           <table>
-            <thead><tr><th>Nome</th><th>Email</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Telefone</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody>
               {usuarios.map((u) => (
                 <tr key={u.id}>
                   <td>{u.nome}</td>
-                  <td>{u.email}</td>
+                  <td>{u.telefone}</td>
                   <td><span className="badge">{u.perfil}</span></td>
                   <td><span className={`status ${u.ativo ? 'status-ativa' : 'status-rascunho'}`}>{u.ativo ? 'Ativo' : 'Inativo'}</span></td>
                   <td style={{ display: 'flex', gap: 4 }}>

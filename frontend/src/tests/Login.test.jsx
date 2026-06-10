@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import Login from '../pages/Login'
@@ -28,21 +28,21 @@ describe('Login Page', () => {
   it('deve renderizar o formulário de login', () => {
     renderLogin()
     expect(screen.getByText('Pesquisa Eleitoral')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Telefone')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Senha')).toBeInTheDocument()
     expect(screen.getByText('Entrar')).toBeInTheDocument()
   })
 
-  it('deve chamar login com email e senha', async () => {
+  it('deve chamar login com telefone e senha', async () => {
     renderLogin()
     const user = userEvent.setup()
 
-    await user.type(screen.getByPlaceholderText('Email'), 'admin@teste.com')
+    await user.type(screen.getByPlaceholderText('Telefone'), '(85) 996962828')
     await user.type(screen.getByPlaceholderText('Senha'), '123456')
     await user.click(screen.getByText('Entrar'))
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('admin@teste.com', '123456')
+      expect(mockLogin).toHaveBeenCalledWith('(85) 996962828', '123456')
     })
   })
 
@@ -52,7 +52,7 @@ describe('Login Page', () => {
     renderLogin()
     const user = userEvent.setup()
 
-    await user.type(screen.getByPlaceholderText('Email'), 'erro@teste.com')
+    await user.type(screen.getByPlaceholderText('Telefone'), '(85) 000000000')
     await user.type(screen.getByPlaceholderText('Senha'), 'errada')
     await user.click(screen.getByText('Entrar'))
 

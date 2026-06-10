@@ -4,21 +4,21 @@ const db = require('../config/database')
 
 async function register(req, res, next) {
   try {
-    const { nome, email, senha, perfil } = req.body
+    const { nome, telefone, senha, perfil } = req.body
 
-    if (!nome || !email || !senha) {
-      return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' })
+    if (!nome || !telefone || !senha) {
+      return res.status(400).json({ error: 'Nome, telefone e senha são obrigatórios' })
     }
 
-    const existente = await db.query('SELECT id FROM usuarios WHERE email = $1', [email])
+    const existente = await db.query('SELECT id FROM usuarios WHERE telefone = $1', [telefone])
     if (existente.rows.length) {
-      return res.status(409).json({ error: 'Email já cadastrado' })
+      return res.status(409).json({ error: 'Telefone já cadastrado' })
     }
 
     const senhaHash = await bcrypt.hash(senha, 10)
     const result = await db.query(
-      `INSERT INTO usuarios (nome, email, senha, perfil) VALUES ($1, $2, $3, $4) RETURNING id, nome, email, perfil, created_at`,
-      [nome, email, senhaHash, perfil || 'entrevistador']
+      `INSERT INTO usuarios (nome, telefone, senha, perfil) VALUES ($1, $2, $3, $4) RETURNING id, nome, telefone, perfil, created_at`,
+      [nome, telefone, senhaHash, perfil || 'entrevistador']
     )
 
     res.status(201).json({ usuario: result.rows[0] })
@@ -29,13 +29,13 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const { email, senha } = req.body
+    const { telefone, senha } = req.body
 
-    if (!email || !senha) {
-      return res.status(400).json({ error: 'Email e senha são obrigatórios' })
+    if (!telefone || !senha) {
+      return res.status(400).json({ error: 'Telefone e senha são obrigatórios' })
     }
 
-    const result = await db.query('SELECT * FROM usuarios WHERE email = $1', [email])
+    const result = await db.query('SELECT * FROM usuarios WHERE telefone = $1', [telefone])
     const usuario = result.rows[0]
 
     if (!usuario) {
@@ -62,7 +62,7 @@ async function login(req, res, next) {
       usuario: {
         id: usuario.id,
         nome: usuario.nome,
-        email: usuario.email,
+        telefone: usuario.telefone,
         perfil: usuario.perfil,
       },
     })
@@ -74,7 +74,7 @@ async function login(req, res, next) {
 async function perfil(req, res, next) {
   try {
     const result = await db.query(
-      'SELECT id, nome, email, perfil, ativo, created_at FROM usuarios WHERE id = $1',
+      'SELECT id, nome, telefone, perfil, ativo, created_at FROM usuarios WHERE id = $1',
       [req.usuario.id]
     )
 

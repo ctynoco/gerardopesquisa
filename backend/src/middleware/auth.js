@@ -11,7 +11,7 @@ async function authenticate(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const result = await db.query('SELECT id, nome, email, perfil, ativo FROM usuarios WHERE id = $1', [decoded.id])
+    const result = await db.query('SELECT id, nome, telefone, perfil, ativo FROM usuarios WHERE id = $1', [decoded.id])
 
     if (!result.rows.length || !result.rows[0].ativo) {
       return res.status(401).json({ error: 'Usuário não encontrado ou inativo' })

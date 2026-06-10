@@ -132,6 +132,8 @@
 | 10/06/2026 | Testes backend criados (80 testes: Jest + Supertest) | ✅ |
 | 10/06/2026 | Testes frontend criados (12 testes: Vitest + Testing Library) | ✅ |
 | 10/06/2026 | Bugfix: exportação CSV (chave de perguntas não mapeada) | ✅ |
+| 10/06/2026 | Login alterado de email para telefone | ✅ |
+| 10/06/2026 | Seed admin: (85) 996962828 / 2314@# | ✅ |
 
 ---
 
