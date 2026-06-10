@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, Button, TextField, Select, MenuItem, FormControl, InputLabel, LinearProgress, Paper, Chip } from '@mui/material'
+import { Box, Typography, Button, TextField, FormControl, InputLabel, Select, MenuItem, LinearProgress, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
 import HowToVoteIcon from '@mui/icons-material/HowToVote'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import HomeIcon from '@mui/icons-material/Home'
-import SaveIcon from '@mui/icons-material/Save'
 import api from '../services/api'
 
 const PERFIL = [
@@ -16,6 +14,8 @@ const PERFIL = [
   { id: 'cidade', label: 'Município', type: 'text' },
   { id: 'estado', label: 'Estado', type: 'text', maxLen: 2 },
 ]
+
+const STORAGE_KEY = 'rascunho_coleta'
 
 export default function Coleta() {
   const [pesquisas, setPesquisas] = useState([])
@@ -30,12 +30,49 @@ export default function Coleta() {
   const [observacoes, setObservacoes] = useState('')
   const [concluido, setConcluido] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [resumeModal, setResumeModal] = useState(false)
+  const [erro, setErro] = useState('')
 
   useEffect(() => { api.get('/pesquisas?limit=100').then((r) => setPesquisas(r.data.pesquisas)) }, [])
+
+  useEffect(() => {
+    const rascunho = localStorage.getItem(STORAGE_KEY)
+    if (rascunho) setResumeModal(true)
+  }, [])
 
   const now = new Date()
   const dataStr = now.toLocaleDateString('pt-BR')
   const horaStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+  function salvarRascunho() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      pesquisaId, perfil, respostas, entrevistadoId, qAtual, etapa, pAtual, observacoes,
+      data: new Date().toISOString(),
+    }))
+  }
+
+  function continuarRascunho() {
+    const r = JSON.parse(localStorage.getItem(STORAGE_KEY))
+    if (r) {
+      setPesquisaId(r.pesquisaId)
+      setPerfil(r.perfil || {})
+      setRespostas(r.respostas || {})
+      setEntrevistadoId(r.entrevistadoId)
+      setQAtual(r.qAtual || 0)
+      setEtapa(r.etapa || 0)
+      setPAtual(r.pAtual || 0)
+      setObservacoes(r.observacoes || '')
+      if (r.pesquisaId) {
+        api.get(`/perguntas?pesquisa_id=${r.pesquisaId}`).then((res) => setPerguntas(res.data.perguntas || []))
+      }
+    }
+    setResumeModal(false)
+  }
+
+  function limparRascunho() {
+    localStorage.removeItem(STORAGE_KEY)
+    setResumeModal(false)
+  }
 
   function iniciar() {
     api.get(`/perguntas?pesquisa_id=${pesquisaId}`).then((r) => {
@@ -49,51 +86,70 @@ export default function Coleta() {
     const r = await api.post('/entrevistados', body)
     setEntrevistadoId(r.data.entrevistado.id)
     setEtapa(2)
+    salvarRascunho()
   }
 
   async function responder(perguntaId, valor) {
     if (!entrevistadoId) return
     setRespostas((prev) => ({ ...prev, [perguntaId]: valor }))
     await api.post('/respostas', {
-      pesquisa_id: Number(pesquisaId),
-      pergunta_id: Number(perguntaId),
-      entrevistado_id: Number(entrevistadoId),
-      resposta: { valor },
-      observacoes: observacoes || null,
+      pesquisa_id: Number(pesquisaId), pergunta_id: Number(perguntaId),
+      entrevistado_id: Number(entrevistadoId), resposta: { valor },
     }).catch(() => {})
+    salvarRascunho()
   }
 
   function resetar() {
+    localStorage.removeItem(STORAGE_KEY)
     setEtapa(0); setPesquisaId(''); setPerguntas([]); setRespostas({}); setPerfil({})
-    setQAtual(0); setPAtual(0); setEntrevistadoId(null); setObservacoes(''); setConcluido(false)
+    setQAtual(0); setPAtual(0); setEntrevistadoId(null); setObservacoes(''); setConcluido(false); setErro('')
   }
 
   async function salvarTudo() {
     setSalvando(true)
     for (const [pid, valor] of Object.entries(respostas)) {
       await api.post('/respostas', {
-        pesquisa_id: Number(pesquisaId),
-        pergunta_id: Number(pid),
-        entrevistado_id: Number(entrevistadoId),
-        resposta: { valor },
+        pesquisa_id: Number(pesquisaId), pergunta_id: Number(pid),
+        entrevistado_id: Number(entrevistadoId), resposta: { valor },
       }).catch(() => {})
     }
     setSalvando(false)
     setConcluido(true)
+    localStorage.removeItem(STORAGE_KEY)
+  }
+
+  function proxima() {
+    const p = perguntas[qAtual]
+    if (p?.tipo !== 'aberta' && !respostas[p?.id]) {
+      setErro('Selecione uma resposta.')
+      return
+    }
+    if (p?.tipo === 'aberta' && !respostas[p?.id]?.trim()) {
+      setErro('Digite uma resposta.')
+      return
+    }
+    setErro('')
+    if (p?.id && respostas[p.id]) responder(p.id, respostas[p.id])
+    if (qAtual < perguntas.length - 1) setQAtual((q) => q + 1)
+  }
+
+  function anterior() {
+    setErro('')
+    if (qAtual > 0) setQAtual((q) => q - 1)
   }
 
   const totalSteps = PERFIL.length + perguntas.length
   const currentStep = etapa === 1 ? pAtual : etapa === 2 ? PERFIL.length + qAtual : 0
   const progressPct = totalSteps > 0 ? ((currentStep) / totalSteps) * 100 : 0
-  const qtdRespondidas = Object.keys(respostas).length
+  const todasRespondidas = Object.keys(respostas).length >= perguntas.length
 
-  // Tela final — ENTREVISTA ENCERRADA
+  // Tela final
   if (etapa === 3) {
     return (
-      <Box sx={{ maxWidth: 480, mx: 'auto' }}>
-        <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, border: '2px solid', borderColor: 'success.main', borderRadius: 3, textAlign: 'center' }}>
-          <CheckCircleIcon color="success" sx={{ fontSize: 64, mb: 2 }} />
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 1, fontSize: '1.4rem' }}>ENTREVISTA ENCERRADA</Typography>
+      <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center' }}>
+        <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, border: '2px solid', borderColor: 'success.main', borderRadius: 3 }}>
+          <CheckCircleIcon color="success" sx={{ fontSize: 70, mb: 2 }} />
+          <Typography variant="h4" fontWeight={700} sx={{ mb: 1, fontSize: '1.3rem' }}>Pesquisa Concluída</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             A presente entrevista foi concluída e validada pelo sistema.
           </Typography>
@@ -103,8 +159,8 @@ export default function Coleta() {
             <Typography variant="caption" display="block" sx={{ mb: 0.5 }}><strong>Data:</strong> {dataStr}</Typography>
             <Typography variant="caption" display="block"><strong>Hora:</strong> {horaStr}</Typography>
           </Box>
-          <Button variant="contained" startIcon={<HomeIcon />} onClick={resetar} sx={{ borderRadius: 2, py: 1.3, px: 4 }}>
-            Nova Entrevista
+          <Button variant="contained" color="success" size="large" onClick={resetar} sx={{ borderRadius: 2, py: 1.5, px: 5, fontSize: '1rem' }}>
+            Finalizar
           </Button>
         </Paper>
       </Box>
@@ -114,17 +170,13 @@ export default function Coleta() {
   // Etapa 2 — Perguntas
   if (etapa === 2 && perguntas.length > 0) {
     const p = perguntas[qAtual]
-    const isLast = qAtual === perguntas.length - 1
-    const jaRespondeu = !!respostas[p?.id]
-    const todasRespondidas = qtdRespondidas >= perguntas.length
 
-    // Se concluiu (clicou Salvar Pesquisa)
     if (concluido) {
       return (
         <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center' }}>
-          <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, border: '2px solid', borderColor: 'success.main', borderRadius: 3, textAlign: 'center' }}>
-            <CheckCircleIcon color="success" sx={{ fontSize: 64, mb: 2 }} />
-            <Typography variant="h4" fontWeight={700} sx={{ mb: 1, fontSize: '1.4rem' }}>Questionário Concluído</Typography>
+          <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, border: '2px solid', borderColor: 'success.main', borderRadius: 3 }}>
+            <CheckCircleIcon color="success" sx={{ fontSize: 70, mb: 2 }} />
+            <Typography variant="h4" fontWeight={700} sx={{ mb: 1, fontSize: '1.3rem' }}>Pesquisa Concluída</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               A presente entrevista foi concluída e validada pelo sistema.
             </Typography>
@@ -135,7 +187,7 @@ export default function Coleta() {
               <Typography variant="caption" display="block"><strong>Hora:</strong> {horaStr}</Typography>
             </Box>
             <Button variant="contained" color="success" size="large" onClick={() => setEtapa(3)} sx={{ borderRadius: 2, py: 1.5, px: 5, fontSize: '1rem' }}>
-              FIM DA PESQUISA
+              Finalizar
             </Button>
           </Paper>
         </Box>
@@ -160,28 +212,42 @@ export default function Coleta() {
               <Typography variant="caption" fontWeight={600}>{PERFIL.length + qAtual + 1}/{totalSteps}</Typography>
               <Typography variant="caption" color="text.secondary">{Math.round(progressPct)}%</Typography>
             </Box>
-            <LinearProgress variant="determinate" value={Math.min(progressPct, 100)} sx={{ height: 6, borderRadius: 3 }} />
+            <LinearProgress variant="determinate" value={Math.min(progressPct, 100)} sx={{ height: 8, borderRadius: 4 }} />
           </Box>
         </Box>
 
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-          <Typography variant="body1" fontWeight={600} sx={{ mb: 2, fontSize: '1rem', lineHeight: 1.4 }}>{p.titulo}</Typography>
+          <Typography variant="body1" fontWeight={700} sx={{ mb: 2, fontSize: '1.1rem', lineHeight: 1.4 }}>{qAtual + 1}. {p.titulo}</Typography>
+
+          {erro && (
+            <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1.5, fontWeight: 600 }}>
+              {erro}
+            </Typography>
+          )}
 
           {p.tipo === 'unica_escolha' || p.tipo === 'multipla_escolha' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {p.opcoes?.map((o) => (
                 <Paper
                   key={o} variant="outlined"
-                  onClick={() => { responder(p.id, o); if (!isLast) setTimeout(() => setQAtual((q) => q + 1), 100) }}
+                  onClick={() => setRespostas((prev) => ({ ...prev, [p.id]: o }))}
                   sx={{
                     p: 1.5, borderRadius: 2, cursor: 'pointer', transition: '0.15s',
-                    borderColor: respostas[p.id] === o ? 'primary.main' : 'divider',
-                    bgcolor: respostas[p.id] === o ? 'primary.main' : 'transparent',
-                    color: respostas[p.id] === o ? '#fff' : 'text.primary',
-                    '&:hover': { bgcolor: respostas[p.id] === o ? 'primary.dark' : 'action.hover', borderColor: 'primary.light' },
+                    borderColor: respostas[p.id] === o ? '#0d6efd' : '#ccc',
+                    bgcolor: respostas[p.id] === o ? '#eef4ff' : 'transparent',
+                    '&:hover': { bgcolor: respostas[p.id] === o ? '#dbeafe' : '#f0f7ff', borderColor: '#0d6efd' },
                   }}
                 >
-                  <Typography variant="body2" fontWeight={respostas[p.id] === o ? 600 : 400}>{o}</Typography>
+                  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                    <Box component="span" sx={{
+                      width: 18, height: 18, borderRadius: '50%', border: '2px solid',
+                      borderColor: respostas[p.id] === o ? '#0d6efd' : '#999',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {respostas[p.id] === o && <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#0d6efd' }} />}
+                    </Box>
+                    <Typography variant="body2" fontWeight={respostas[p.id] === o ? 600 : 400}>{o}</Typography>
+                  </Box>
                 </Paper>
               ))}
             </Box>
@@ -189,25 +255,37 @@ export default function Coleta() {
             <TextField
               value={respostas[p.id] || ''}
               onChange={(e) => setRespostas((prev) => ({ ...prev, [p.id]: e.target.value }))}
-              onKeyDown={(e) => { if (e.key === 'Enter' && respostas[p.id]?.trim()) { responder(p.id, respostas[p.id]); if (!isLast) setTimeout(() => setQAtual((q) => q + 1), 100) } }}
-              placeholder="Digite a resposta e pressione Enter..." multiline rows={3} fullWidth
+              placeholder="Digite sua resposta..." multiline rows={3} fullWidth
               sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }}
             />
           )}
 
           <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Observações do entrevistador</Typography>
-            <TextField value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Anotações sobre esta pergunta..." multiline rows={2} size="small" fullWidth
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Observações</Typography>
+            <TextField value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Anotações..." multiline rows={2} size="small" fullWidth
               sx={{ '& .MuiInputBase-root': { borderRadius: 2, fontSize: '0.8rem' } }} />
           </Box>
         </Paper>
 
-        {/* Botão Salvar Pesquisa aparece após responder todas */}
-        {todasRespondidas && (
-          <Button variant="contained" color="success" size="large" startIcon={<SaveIcon />} onClick={salvarTudo} disabled={salvando} fullWidth sx={{ borderRadius: 2, py: 1.5, fontSize: '1rem' }}>
-            {salvando ? 'Salvando...' : 'Salvar Pesquisa'}
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          {qAtual > 0 && (
+            <Button variant="contained" onClick={anterior} sx={{ borderRadius: 2, py: 1.2, flex: 1, bgcolor: '#6c757d', '&:hover': { bgcolor: '#5a6268' } }}>
+              Voltar
+            </Button>
+          )}
+
+          {!todasRespondidas && (
+            <Button variant="contained" onClick={proxima} disabled={!respostas[p?.id]?.toString().trim() && p?.tipo !== 'aberta'} sx={{ borderRadius: 2, py: 1.2, flex: 1, bgcolor: '#0d6efd' }}>
+              Próxima
+            </Button>
+          )}
+
+          {todasRespondidas && (
+            <Button variant="contained" color="success" size="large" startIcon={<CheckCircleIcon />} onClick={salvarTudo} disabled={salvando} sx={{ borderRadius: 2, py: 1.2, flex: 1, fontSize: '0.9rem' }}>
+              {salvando ? 'Salvando...' : 'Salvar Pesquisa'}
+            </Button>
+          )}
+        </Box>
       </Box>
     )
   }
@@ -237,28 +315,36 @@ export default function Coleta() {
               <Typography variant="caption" fontWeight={600}>{pAtual + 1}/{total}</Typography>
               <Typography variant="caption" color="text.secondary">{Math.round(progressPct)}%</Typography>
             </Box>
-            <LinearProgress variant="determinate" value={progressPct} sx={{ height: 6, borderRadius: 3 }} />
+            <LinearProgress variant="determinate" value={progressPct} sx={{ height: 8, borderRadius: 4 }} />
           </Box>
         </Box>
 
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
           <Typography variant="caption" color="text.secondary" fontWeight={600}>Perfil do Entrevistado</Typography>
-          <Typography variant="body1" fontWeight={600} sx={{ mb: 2, mt: 0.5, fontSize: '1rem' }}>{campo.label}</Typography>
+          <Typography variant="body1" fontWeight={700} sx={{ mb: 2, mt: 0.5, fontSize: '1.1rem' }}>{campo.label}</Typography>
 
           {campo.type === 'select' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {campo.opts.map((o) => (
                 <Paper key={o} variant="outlined"
-                  onClick={() => { setPerfil((prev) => ({ ...prev, [campo.id]: o })); setTimeout(() => { if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() }, 120) }}
+                  onClick={() => { setPerfil((prev) => ({ ...prev, [campo.id]: o })); salvarRascunho(); setTimeout(() => { if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() }, 120) }}
                   sx={{
                     p: 1.5, borderRadius: 2, cursor: 'pointer', transition: '0.15s',
-                    borderColor: perfil[campo.id] === o ? 'primary.main' : 'divider',
-                    bgcolor: perfil[campo.id] === o ? 'primary.main' : 'transparent',
-                    color: perfil[campo.id] === o ? '#fff' : 'text.primary',
-                    '&:hover': { bgcolor: perfil[campo.id] === o ? 'primary.dark' : 'action.hover', borderColor: 'primary.light' },
+                    borderColor: perfil[campo.id] === o ? '#0d6efd' : '#ccc',
+                    bgcolor: perfil[campo.id] === o ? '#eef4ff' : 'transparent',
+                    '&:hover': { bgcolor: '#f0f7ff', borderColor: '#0d6efd' },
                   }}
                 >
-                  <Typography variant="body2" fontWeight={perfil[campo.id] === o ? 600 : 400}>{o}</Typography>
+                  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                    <Box component="span" sx={{
+                      width: 18, height: 18, borderRadius: '50%', border: '2px solid',
+                      borderColor: perfil[campo.id] === o ? '#0d6efd' : '#999',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {perfil[campo.id] === o && <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#0d6efd' }} />}
+                    </Box>
+                    <Typography variant="body2" fontWeight={perfil[campo.id] === o ? 600 : 400}>{o}</Typography>
+                  </Box>
                 </Paper>
               ))}
             </Box>
@@ -266,8 +352,8 @@ export default function Coleta() {
             <TextField
               value={perfil[campo.id] || ''}
               onChange={(e) => setPerfil((prev) => ({ ...prev, [campo.id]: e.target.value }))}
-              onKeyDown={(e) => { if (e.key === 'Enter' && perfil[campo.id]?.trim()) { if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() } }}
-              placeholder={`${campo.label} e pressione Enter...`}
+              onKeyDown={(e) => { if (e.key === 'Enter' && perfil[campo.id]?.trim()) { salvarRascunho(); if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() } }}
+              placeholder={`${campo.label} e pressione Enter`}
               type={campo.type === 'number' ? 'number' : 'text'} fullWidth autoFocus
               inputProps={campo.maxLen ? { maxLength: campo.maxLen } : {}}
               sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }}
@@ -295,6 +381,19 @@ export default function Coleta() {
           Iniciar Coleta
         </Button>
       </Paper>
+
+      <Dialog open={resumeModal} onClose={() => setResumeModal(false)}>
+        <DialogTitle>Pesquisa Encontrada</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Foi encontrada uma entrevista em andamento. Deseja continuar de onde parou?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2, gap: 1 }}>
+          <Button variant="contained" onClick={continuarRascunho} sx={{ borderRadius: 2, bgcolor: '#0d6efd' }}>CONTINUAR</Button>
+          <Button variant="contained" onClick={limparRascunho} sx={{ borderRadius: 2, bgcolor: '#dc3545', '&:hover': { bgcolor: '#c82333' } }}>NOVA</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
