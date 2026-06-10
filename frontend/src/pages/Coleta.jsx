@@ -168,7 +168,7 @@ export default function Coleta() {
         <Box sx={{ display: 'flex', gap: 1 }}>
           {pAtual > 0 && <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => setPAtual((p) => p - 1)} sx={{ flex: 1, borderRadius: 2, py: 1.3 }}>Anterior</Button>}
           <Box sx={{ flex: 1 }} />
-          {campo.type === 'text' && (
+          {campo.type !== 'select' && (
             <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={() => { if (pAtual < total - 1) setPAtual((p) => p + 1); else salvarPerfil() }} disabled={!perfil[campo.id]?.trim()} sx={{ borderRadius: 2, py: 1.3 }}>
               {pAtual < total - 1 ? 'Próximo' : 'Iniciar Pesquisa'}
             </Button>

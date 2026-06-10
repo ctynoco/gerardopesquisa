@@ -3,7 +3,7 @@ import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, AppBar, 
 import { useState } from 'react'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import QuizIcon from '@mui/icons-material/Quiz'
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
+
 import HowToVoteIcon from '@mui/icons-material/HowToVote'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import TableChartIcon from '@mui/icons-material/TableChart'
@@ -21,7 +21,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Questionario from './pages/Questionario'
-import Biblioteca from './pages/Biblioteca'
+
 import Coleta from './pages/Coleta'
 import Tabulacao from './pages/Tabulacao'
 import Cruzamentos from './pages/Cruzamentos'
@@ -33,7 +33,6 @@ const DRAWER_W = 260
 const icons = {
   Dashboard: <DashboardIcon />,
   'Criar Questionário': <QuizIcon />,
-  Biblioteca: <LibraryBooksIcon />,
   Coleta: <HowToVoteIcon />,
   Tabulação: <TableChartIcon />,
   Cruzamentos: <MergeTypeIcon />,
@@ -153,7 +152,6 @@ function AdminLayout() {
     <Layout links={[
       { to: '/', label: 'Dashboard', element: <Dashboard /> },
       { to: '/questionario', label: 'Criar Questionário', element: <Questionario /> },
-      { to: '/biblioteca', label: 'Biblioteca', element: <Biblioteca /> },
       { to: '/coleta', label: 'Coleta', element: <Coleta /> },
       { to: '/tabulacao', label: 'Tabulação', element: <Tabulacao /> },
       { to: '/cruzamentos', label: 'Cruzamentos', element: <Cruzamentos /> },

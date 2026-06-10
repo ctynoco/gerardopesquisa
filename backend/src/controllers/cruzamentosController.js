@@ -65,4 +65,119 @@ async function cruzamentos(req, res, next) {
   }
 }
 
-module.exports = { cruzamentos }
+async function cruzamentosCompleto(req, res, next) {
+  try {
+    const { pesquisa_id } = req.params
+
+    const perguntas = await db.query(
+      `SELECT id, titulo, tipo, opcoes FROM perguntas WHERE pesquisa_id = $1 ORDER BY ordenacao`,
+      [pesquisa_id]
+    )
+
+    async function queryDim(sql, col) {
+      const r = await db.query(sql, [pesquisa_id])
+      const map = {}
+      for (const row of r.rows) {
+        const key = `${row.pergunta_id}::${row.resposta_valor}`
+        if (!map[key]) map[key] = {}
+        map[key][row[col]] = parseInt(row.quantidade)
+      }
+      return map
+    }
+
+    const [genero, escolaridade, renda, idadeFaixa, idadeMedia] = await Promise.all([
+      queryDim(
+        `SELECT r.pergunta_id, r.resposta->>'valor' AS resposta_valor, e.genero, COUNT(*) AS quantidade
+         FROM respostas r JOIN entrevistados e ON e.id = r.entrevistado_id
+         WHERE r.pesquisa_id = $1 AND e.genero IS NOT NULL
+         GROUP BY r.pergunta_id, resposta_valor, e.genero`, 'genero'),
+      queryDim(
+        `SELECT r.pergunta_id, r.resposta->>'valor' AS resposta_valor, e.escolaridade, COUNT(*) AS quantidade
+         FROM respostas r JOIN entrevistados e ON e.id = r.entrevistado_id
+         WHERE r.pesquisa_id = $1 AND e.escolaridade IS NOT NULL
+         GROUP BY r.pergunta_id, resposta_valor, e.escolaridade`, 'escolaridade'),
+      queryDim(
+        `SELECT r.pergunta_id, r.resposta->>'valor' AS resposta_valor, e.renda_familiar, COUNT(*) AS quantidade
+         FROM respostas r JOIN entrevistados e ON e.id = r.entrevistado_id
+         WHERE r.pesquisa_id = $1 AND e.renda_familiar IS NOT NULL
+         GROUP BY r.pergunta_id, resposta_valor, e.renda_familiar`, 'renda_familiar'),
+      queryDim(
+        `SELECT r.pergunta_id, r.resposta->>'valor' AS resposta_valor,
+           CASE
+             WHEN e.idade BETWEEN 16 AND 24 THEN '16 a 24'
+             WHEN e.idade BETWEEN 25 AND 34 THEN '25 a 34'
+             WHEN e.idade BETWEEN 35 AND 44 THEN '35 a 44'
+             WHEN e.idade BETWEEN 45 AND 59 THEN '45 a 59'
+             ELSE '60+'
+           END AS idade, COUNT(*) AS quantidade
+         FROM respostas r JOIN entrevistados e ON e.id = r.entrevistado_id
+         WHERE r.pesquisa_id = $1 AND e.idade IS NOT NULL
+         GROUP BY r.pergunta_id, resposta_valor, idade`, 'idade'),
+    ])
+
+    const idadeMediaRows = await db.query(
+      `SELECT r.pergunta_id, r.resposta->>'valor' AS resposta_valor, AVG(e.idade)::numeric(10,1) AS idade_media
+       FROM respostas r JOIN entrevistados e ON e.id = r.entrevistado_id
+       WHERE r.pesquisa_id = $1 AND e.idade IS NOT NULL
+       GROUP BY r.pergunta_id, resposta_valor`, [pesquisa_id]
+    )
+
+    const idadeMediaMap = {}
+    for (const row of idadeMediaRows.rows) {
+      idadeMediaMap[`${row.pergunta_id}::${row.resposta_valor}`] = parseFloat(row.idade_media)
+    }
+
+    const resultados = perguntas.rows.map((p) => {
+      const dados = []
+      for (const row of perguntas.rows) {
+        if (row.id !== p.id) continue
+      }
+      const respostas = [...new Set(
+        [...Object.keys(genero), ...Object.keys(escolaridade), ...Object.keys(renda), ...Object.keys(idadeFaixa)]
+          .filter((k) => k.startsWith(`${p.id}::`))
+          .map((k) => k.split('::')[1])
+      )]
+      const linhas = respostas.map((valor) => {
+        const key = `${p.id}::${valor}`
+        return {
+          valor,
+          total: Object.values(genero[key] || {}).reduce((s, v) => s + v, 0) +
+                 Object.values(escolaridade[key] || {}).reduce((s, v) => s + v, 0) +
+                 Object.values(renda[key] || {}).reduce((s, v) => s + v, 0) +
+                 Object.values(idadeFaixa[key] || {}).reduce((s, v) => s + v, 0),
+          genero: genero[key] || {},
+          escolaridade: escolaridade[key] || {},
+          renda: renda[key] || {},
+          idade: idadeFaixa[key] || {},
+          idade_media: idadeMediaMap[key] || null,
+        }
+      })
+      const totalGeral = linhas.reduce((s, l) => s + l.total, 0)
+      return {
+        pergunta_id: p.id,
+        titulo: p.titulo,
+        tipo: p.tipo,
+        opcoes: p.opcoes,
+        total_geral: totalGeral || linhas.reduce((s, l) => {
+          const vals = Object.values(l.genero)
+          return s + (vals.length ? vals.reduce((a, b) => a + b, 0) : 0)
+        }, 0),
+        linhas,
+      }
+    })
+
+    const totalEntrevistados = await db.query(
+      'SELECT COUNT(DISTINCT entrevistado_id) FROM respostas WHERE pesquisa_id = $1', [pesquisa_id]
+    )
+
+    res.json({
+      pesquisa_id: Number(pesquisa_id),
+      total_entrevistados: parseInt(totalEntrevistados.rows[0].count),
+      perguntas: resultados,
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+module.exports = { cruzamentos, cruzamentosCompleto }
