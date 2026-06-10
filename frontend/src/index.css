@@ -15,6 +15,53 @@
   --radius: 8px;
 }
 
+[data-theme="dark"] {
+  --sidebar: #0f172a;
+  --sidebar-hover: #1e293b;
+  --header: #1e293b;
+  --bg: #0f172a;
+  --card: #1e293b;
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --danger: #ef4444;
+  --text: #f1f5f9;
+  --text-light: #94a3b8;
+  --border: #334155;
+}
+
+[data-theme="dark"] th {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .btn:hover {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .btn-danger:hover {
+  background: #450a0a;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .login-container {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .login-card {
+  background: #1e293b;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+[data-theme="dark"] .login-card input {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg);

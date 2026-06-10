@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Pesquisas from './pages/Pesquisas'
@@ -10,6 +11,8 @@ import Mapa from './pages/Mapa'
 import Admin from './pages/Admin'
 
 function Sidebar({ links, usuario, logout }) {
+  const { theme, toggle } = useTheme()
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -25,6 +28,9 @@ function Sidebar({ links, usuario, logout }) {
         <span style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 8 }}>
           {usuario.nome} ({usuario.perfil})
         </span>
+        <button onClick={toggle} style={{ marginBottom: 4 }}>
+          {theme === 'light' ? '🌙 Modo escuro' : '☀️ Modo claro'}
+        </button>
         <button onClick={logout}>Sair</button>
       </div>
     </aside>
@@ -113,13 +119,15 @@ function ProtectedRoute() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/*" element={<ProtectedRoute />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/*" element={<ProtectedRoute />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   )
 }
