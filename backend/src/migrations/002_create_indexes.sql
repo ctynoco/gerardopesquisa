@@ -8,4 +8,4 @@ CREATE INDEX IF NOT EXISTS idx_respostas_pergunta_id ON respostas(pergunta_id);
 CREATE INDEX IF NOT EXISTS idx_respostas_entrevistado_id ON respostas(entrevistado_id);
 CREATE INDEX IF NOT EXISTS idx_auditoria_usuario_id ON auditoria(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_auditoria_entidade ON auditoria(entidade, entidade_id);
-CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+CREATE INDEX IF NOT EXISTS idx_usuarios_telefone ON usuarios(telefone);
