@@ -50,7 +50,10 @@ async function criar(req, res, next) {
       [pesquisa_id, nome || null, idadeNum, genero || null, cidade || null, estado || null, bairro || null, escolaridade || null, renda_familiar || null, ocupacao || null, zona_eleitoral || null, sessao_eleitoral || null, consentimento_lgpd || false, token]
     )
     res.status(201).json({ entrevistado: result.rows[0] })
-  } catch (err) { next(err) }
+  } catch (err) {
+    console.error('[CRIAR ENTREVISTADO]', { message: err.message, code: err.code, detail: err.detail, body: req.body })
+    res.status(500).json({ error: err.message || 'Erro', detail: err.detail || null, code: err.code || null })
+  }
 }
 
 async function atualizar(req, res, next) {
