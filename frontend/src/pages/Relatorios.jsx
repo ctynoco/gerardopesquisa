@@ -79,6 +79,13 @@ export default function Relatorios() {
             </Typography>
           </Box>
 
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'space-between', mb: 2, p: 1.5, backgroundColor: 'action.hover', borderRadius: 1, fontSize: '8pt' }}>
+            <Typography variant="caption"><strong>Nº:</strong> __________</Typography>
+            <Typography variant="caption"><strong>Data:</strong> ___/___/______</Typography>
+            <Typography variant="caption"><strong>Hora:</strong> ___:___</Typography>
+            <Typography variant="caption"><strong>Total Perguntas:</strong> {perguntasModelo.length || perguntas.length}</Typography>
+          </Box>
+
           {modo === 'com_dados' ? (
             perguntas.map((p) => {
               const total = p.contagem.reduce((s, c) => s + Number(c.quantidade), 0)
@@ -109,7 +116,7 @@ export default function Relatorios() {
           ) : (
             perguntasModelo.map((p, i) => (
               <Box key={p.id || i} className="questionario-campo" sx={{ mb: 2, pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>{p.titulo}</Typography>
+                <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>{i + 1}. {p.titulo}</Typography>
                 <Box className="linha-resposta" sx={{ minHeight: 40 }}>
                   {p.opcoes?.length > 0 ? (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 0.5 }}>
@@ -123,6 +130,10 @@ export default function Relatorios() {
                   ) : (
                     <Box sx={{ borderBottom: '1px dashed #999', height: 30, mt: 1, width: '100%' }} />
                   )}
+                </Box>
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '7pt', display: 'block', mb: 0.25 }}>Observações:</Typography>
+                  <Box sx={{ borderBottom: '1px dashed #ccc', height: 24, width: '100%' }} />
                 </Box>
               </Box>
             ))
