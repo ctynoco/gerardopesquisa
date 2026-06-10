@@ -1,0 +1,1 @@
+ALTER TABLE entrevistados ADD COLUMN IF NOT EXISTS bairro VARCHAR(255);

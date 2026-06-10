@@ -7,3 +7,118 @@ body {
 }
 
 #root { min-height: 100vh; }
+
+/* ---- Estilo A4 Profissional para Impressão ---- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+
+  body {
+    width: 180mm;
+    margin: auto;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #000;
+    background: #fff !important;
+  }
+
+  .no-print, .no-print * {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .MuiDrawer-root, .MuiAppBar-root, .sidebar, .MuiToolbar-root {
+    display: none !important;
+  }
+
+  .MuiCard-root {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 5mm;
+  }
+
+  .MuiCardContent-root {
+    padding: 4mm !important;
+  }
+
+  table {
+    font-size: 8pt;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 2mm 3mm;
+    border: 1px solid #999;
+    text-align: left;
+  }
+
+  th {
+    background: #f0f0f0 !important;
+    font-weight: 600;
+  }
+
+  h1 { font-size: 14pt; margin-bottom: 3mm; }
+  h2 { font-size: 11pt; margin-bottom: 2mm; }
+  h3 { font-size: 10pt; margin-bottom: 1mm; }
+
+  /* Cabeçalho e rodapé */
+  #print-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 3mm;
+    margin-bottom: 5mm;
+  }
+
+  #print-header h1 {
+    font-size: 16pt;
+    margin: 0;
+  }
+
+  #print-header p {
+    font-size: 9pt;
+    color: #555;
+  }
+
+  #print-footer {
+    text-align: center;
+    border-top: 1px solid #999;
+    padding-top: 2mm;
+    margin-top: 5mm;
+    font-size: 8pt;
+    color: #666;
+  }
+
+  #print-footer .page-number:after {
+    content: counter(page);
+  }
+}
+
+.print-only {
+  display: none;
+}
+
+/* A4 na tela (opcional) */
+.a4-page {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 15mm;
+  border: 1px solid #e2e8f0;
+  border-radius: 2px;
+  background: #fff;
+}
+
+@media (max-width: 800px) {
+  .a4-page {
+    padding: 3mm;
+    border: none;
+    border-radius: 0;
+  }
+}

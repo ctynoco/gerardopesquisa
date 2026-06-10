@@ -40,13 +40,13 @@ async function obter(req, res, next) {
 
 async function criar(req, res, next) {
   try {
-    const { pesquisa_id, nome, idade, genero, cidade, estado, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd } = req.body
+    const { pesquisa_id, nome, idade, genero, cidade, estado, bairro, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd } = req.body
     if (!pesquisa_id) return res.status(400).json({ error: 'pesquisa_id é obrigatório' })
     const token = crypto.randomBytes(16).toString('hex')
     const result = await db.query(
-      `INSERT INTO entrevistados (pesquisa_id, nome, idade, genero, cidade, estado, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd, token_anonimizacao)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
-      [pesquisa_id, nome, idade, genero, cidade, estado, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd || false, token]
+      `INSERT INTO entrevistados (pesquisa_id, nome, idade, genero, cidade, estado, bairro, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd, token_anonimizacao)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+      [pesquisa_id, nome, idade, genero, cidade, estado, bairro, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd || false, token]
     )
     res.status(201).json({ entrevistado: result.rows[0] })
   } catch (err) { next(err) }
@@ -54,12 +54,12 @@ async function criar(req, res, next) {
 
 async function atualizar(req, res, next) {
   try {
-    const { nome, idade, genero, cidade, estado, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd } = req.body
+    const { nome, idade, genero, cidade, estado, bairro, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd } = req.body
     const result = await db.query(
       `UPDATE entrevistados SET nome = $1, idade = $2, genero = $3, cidade = $4, estado = $5,
-        escolaridade = $6, renda_familiar = $7, ocupacao = $8, zona_eleitoral = $9, sessao_eleitoral = $10, consentimento_lgpd = $11
-       WHERE id = $12 RETURNING *`,
-      [nome, idade, genero, cidade, estado, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd, req.params.id]
+        bairro = $6, escolaridade = $7, renda_familiar = $8, ocupacao = $9, zona_eleitoral = $10, sessao_eleitoral = $11, consentimento_lgpd = $12
+       WHERE id = $13 RETURNING *`,
+      [nome, idade, genero, cidade, estado, bairro, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd, req.params.id]
     )
     if (!result.rows.length) return res.status(404).json({ error: 'Entrevistado não encontrado' })
     res.json({ entrevistado: result.rows[0] })

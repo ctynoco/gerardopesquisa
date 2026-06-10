@@ -2,10 +2,11 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, AppBar, Toolbar, Typography, IconButton, Avatar, Menu, MenuItem, Divider, useMediaQuery } from '@mui/material'
 import { useState } from 'react'
 import DashboardIcon from '@mui/icons-material/Dashboard'
-import AssessmentIcon from '@mui/icons-material/Assessment'
 import QuizIcon from '@mui/icons-material/Quiz'
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
 import HowToVoteIcon from '@mui/icons-material/HowToVote'
 import BarChartIcon from '@mui/icons-material/BarChart'
+import TableChartIcon from '@mui/icons-material/TableChart'
 import MapIcon from '@mui/icons-material/Map'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
@@ -14,26 +15,29 @@ import LogoutIcon from '@mui/icons-material/Logout'
 import PollIcon from '@mui/icons-material/Poll'
 import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
+import MergeTypeIcon from '@mui/icons-material/MergeType'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import Pesquisas from './pages/Pesquisas'
-import Perguntas from './pages/Perguntas'
+import Questionario from './pages/Questionario'
+import Biblioteca from './pages/Biblioteca'
 import Coleta from './pages/Coleta'
+import Tabulacao from './pages/Tabulacao'
+import Cruzamentos from './pages/Cruzamentos'
 import Relatorios from './pages/Relatorios'
-import Mapa from './pages/Mapa'
 import Admin from './pages/Admin'
 
 const DRAWER_W = 260
 
 const icons = {
   Dashboard: <DashboardIcon />,
-  Pesquisas: <AssessmentIcon />,
-  Perguntas: <QuizIcon />,
+  'Criar Questionário': <QuizIcon />,
+  Biblioteca: <LibraryBooksIcon />,
   Coleta: <HowToVoteIcon />,
-  Relatorios: <BarChartIcon />,
-  Mapa: <MapIcon />,
+  Tabulação: <TableChartIcon />,
+  Cruzamentos: <MergeTypeIcon />,
+  Relatórios: <BarChartIcon />,
   Admin: <AdminPanelSettingsIcon />,
 }
 
@@ -116,13 +120,7 @@ function Layout({ links }) {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {isMobile ? (
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{ '& .MuiDrawer-paper': { width: DRAWER_W, boxSizing: 'border-box' } }}
-        >
+        <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: DRAWER_W, boxSizing: 'border-box' } }}>
           <SidebarContent links={links} usuario={usuario} logout={logout} onClose={() => setMobileOpen(false)} />
         </Drawer>
       ) : (
@@ -133,23 +131,15 @@ function Layout({ links }) {
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Toolbar variant="dense" sx={{ gap: 1 }}>
-            {isMobile && (
-              <IconButton edge="start" onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}>
-                <MenuIcon />
-              </IconButton>
-            )}
+          <Toolbar variant="dense" sx={{ gap: 1, minHeight: { xs: 48, sm: 52 } }}>
+            {isMobile && <IconButton edge="start" onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}><MenuIcon /></IconButton>}
             <Box sx={{ flex: 1 }} />
-            <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-              {usuario.nome} &mdash; {usuario.perfil}
-            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>{usuario.nome} &mdash; {usuario.perfil}</Typography>
           </Toolbar>
         </AppBar>
         <Box sx={{ flex: 1, p: { xs: 1.5, sm: 2, md: 3 }, overflow: 'auto', backgroundColor: 'background.default' }}>
           <Routes>
-            {links.map((l) => (
-              <Route key={l.to} path={l.to === '/' ? '/' : l.to} element={l.element} />
-            ))}
+            {links.map((l) => <Route key={l.to} path={l.to === '/' ? '/' : l.to} element={l.element} />)}
             <Route path="*" element={<Navigate to={links[0].to} replace />} />
           </Routes>
         </Box>
@@ -160,28 +150,21 @@ function Layout({ links }) {
 
 function AdminLayout() {
   return (
-    <Layout
-      links={[
-        { to: '/', label: 'Dashboard', element: <Dashboard /> },
-        { to: '/pesquisas', label: 'Pesquisas', element: <Pesquisas /> },
-        { to: '/perguntas', label: 'Perguntas', element: <Perguntas /> },
-        { to: '/coleta', label: 'Coleta', element: <Coleta /> },
-        { to: '/relatorios', label: 'Relatorios', element: <Relatorios /> },
-        { to: '/mapa', label: 'Mapa', element: <Mapa /> },
-        { to: '/admin', label: 'Admin', element: <Admin /> },
-      ]}
-    />
+    <Layout links={[
+      { to: '/', label: 'Dashboard', element: <Dashboard /> },
+      { to: '/questionario', label: 'Criar Questionário', element: <Questionario /> },
+      { to: '/biblioteca', label: 'Biblioteca', element: <Biblioteca /> },
+      { to: '/coleta', label: 'Coleta', element: <Coleta /> },
+      { to: '/tabulacao', label: 'Tabulação', element: <Tabulacao /> },
+      { to: '/cruzamentos', label: 'Cruzamentos', element: <Cruzamentos /> },
+      { to: '/relatorios', label: 'Relatórios', element: <Relatorios /> },
+      { to: '/admin', label: 'Admin', element: <Admin /> },
+    ]} />
   )
 }
 
 function PesquisadorLayout() {
-  return (
-    <Layout
-      links={[
-        { to: '/coleta', label: 'Coleta', element: <Coleta /> },
-      ]}
-    />
-  )
+  return <Layout links={[{ to: '/coleta', label: 'Coleta', element: <Coleta /> }]} />
 }
 
 function ProtectedRoute() {
