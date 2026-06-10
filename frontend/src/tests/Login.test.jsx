@@ -9,6 +9,7 @@ const mockLogin = vi.fn()
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     login: mockLogin,
+    usuario: null,
   }),
 }))
 

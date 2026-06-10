@@ -1,24 +1,33 @@
 import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import '../styles/login.css'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, usuario } = useAuth()
+
+  if (usuario) {
+    return <Navigate to={usuario.perfil === 'entrevistador' ? '/coleta' : '/'} replace />
+  }
   const [modo, setModo] = useState('entrar')
   const [telefone, setTelefone] = useState('')
   const [senha, setSenha] = useState('')
   const [nome, setNome] = useState('')
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
+  const [loading, setLoading] = useState(false)
 
   async function handleLogin(e) {
     e.preventDefault()
+    setLoading(true)
+    setErro('')
     try {
-      setErro('')
       await login(telefone, senha)
     } catch {
       setErro('Credenciais inválidas')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -57,7 +66,7 @@ export default function Login() {
                 type="password" placeholder="Senha" value={senha}
                 onChange={(e) => setSenha(e.target.value)} required
               />
-              <button type="submit">Entrar</button>
+              <button type="submit" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
             </form>
             <p style={{ marginTop: 16, fontSize: 13, color: '#94a3b8' }}>
               Ainda não tem conta?{' '}
