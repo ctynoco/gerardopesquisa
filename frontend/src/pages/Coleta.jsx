@@ -63,7 +63,10 @@ export default function Coleta() {
       setPAtual(r.pAtual || 0)
       setObservacoes(r.observacoes || '')
       if (r.pesquisaId) {
-        api.get(`/perguntas?pesquisa_id=${r.pesquisaId}`).then((res) => setPerguntas(res.data.perguntas || []))
+        api.get(`/perguntas?pesquisa_id=${r.pesquisaId}`).then((res) => {
+          const lista = res.data?.perguntas || res.data || []
+          setPerguntas(Array.isArray(lista) ? lista : [])
+        }).catch(() => setPerguntas([]))
       }
     }
     setResumeModal(false)
@@ -76,27 +79,27 @@ export default function Coleta() {
 
   function iniciar() {
     api.get(`/perguntas?pesquisa_id=${pesquisaId}`).then((r) => {
-      setPerguntas(r.data.perguntas || [])
+      const lista = r.data?.perguntas || r.data || []
+      setPerguntas(Array.isArray(lista) ? lista : [])
       setEtapa(1)
-    })
+    }).catch(() => { setPerguntas([]); setEtapa(1) })
   }
 
   async function salvarPerfil() {
     const body = { pesquisa_id: Number(pesquisaId), ...perfil, consentimento_lgpd: true }
-    const r = await api.post('/entrevistados', body)
+    const r = await api.post('/entrevistados', body).catch(() => null)
+    if (!r) return
     setEntrevistadoId(r.data.entrevistado.id)
     setEtapa(2)
     salvarRascunho()
   }
 
-  async function responder(perguntaId, valor) {
+  async function salvarResposta(perguntaId, valor) {
     if (!entrevistadoId) return
-    setRespostas((prev) => ({ ...prev, [perguntaId]: valor }))
     await api.post('/respostas', {
       pesquisa_id: Number(pesquisaId), pergunta_id: Number(perguntaId),
       entrevistado_id: Number(entrevistadoId), resposta: { valor },
     }).catch(() => {})
-    salvarRascunho()
   }
 
   function resetar() {
@@ -107,30 +110,31 @@ export default function Coleta() {
 
   async function salvarTudo() {
     setSalvando(true)
+    setErro('')
     for (const [pid, valor] of Object.entries(respostas)) {
-      await api.post('/respostas', {
-        pesquisa_id: Number(pesquisaId), pergunta_id: Number(pid),
-        entrevistado_id: Number(entrevistadoId), resposta: { valor },
-      }).catch(() => {})
+      await salvarResposta(pid, valor)
     }
     setSalvando(false)
     setConcluido(true)
     localStorage.removeItem(STORAGE_KEY)
   }
 
+  function selecionar(valor) {
+    const p = perguntas[qAtual]
+    if (!p) return
+    setRespostas((prev) => ({ ...prev, [p.id]: valor }))
+    setErro('')
+    salvarRascunho()
+  }
+
   function proxima() {
     const p = perguntas[qAtual]
-    if (p?.tipo !== 'aberta' && !respostas[p?.id]) {
-      setErro('Selecione uma resposta.')
-      return
-    }
-    if (p?.tipo === 'aberta' && !respostas[p?.id]?.trim()) {
-      setErro('Digite uma resposta.')
-      return
-    }
-    setErro('')
-    if (p?.id && respostas[p.id]) responder(p.id, respostas[p.id])
+    if (!p) return
+    if (!respostas[p.id]) { setErro('Selecione uma resposta.'); return }
+    salvarResposta(p.id, respostas[p.id])
     if (qAtual < perguntas.length - 1) setQAtual((q) => q + 1)
+    setErro('')
+    salvarRascunho()
   }
 
   function anterior() {
@@ -138,10 +142,10 @@ export default function Coleta() {
     if (qAtual > 0) setQAtual((q) => q - 1)
   }
 
+  const perfilOk = PERFIL.every((c) => perfil[c.id]?.toString().trim())
   const totalSteps = PERFIL.length + perguntas.length
-  const currentStep = etapa === 1 ? pAtual : etapa === 2 ? PERFIL.length + qAtual : 0
-  const progressPct = totalSteps > 0 ? ((currentStep) / totalSteps) * 100 : 0
-  const todasRespondidas = Object.keys(respostas).length >= perguntas.length
+  const currentStep = etapa === 1 ? pAtual : etapa === 2 && perguntas.length > 0 ? PERFIL.length + qAtual : 0
+  const progressPct = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
 
   // Tela final
   if (etapa === 3) {
@@ -168,8 +172,20 @@ export default function Coleta() {
   }
 
   // Etapa 2 — Perguntas
-  if (etapa === 2 && perguntas.length > 0) {
+  if (etapa === 2) {
+    if (perguntas.length === 0) {
+      return (
+        <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center' }}>
+          <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <Typography variant="body1" color="text.secondary">Nenhuma pergunta encontrada para esta pesquisa.</Typography>
+            <Button variant="outlined" onClick={resetar} sx={{ mt: 2, borderRadius: 2 }}>Voltar</Button>
+          </Paper>
+        </Box>
+      )
+    }
+
     const p = perguntas[qAtual]
+    if (!p) { setQAtual(0); return null }
 
     if (concluido) {
       return (
@@ -193,6 +209,10 @@ export default function Coleta() {
         </Box>
       )
     }
+
+    const jaRespondeu = !!respostas[p.id]
+    const isLast = qAtual === perguntas.length - 1
+    const podeAvancar = isLast ? jaRespondeu : !!respostas[p.id] || p.tipo !== 'aberta'
 
     return (
       <Box sx={{ maxWidth: 520, mx: 'auto' }}>
@@ -228,14 +248,12 @@ export default function Coleta() {
           {p.tipo === 'unica_escolha' || p.tipo === 'multipla_escolha' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {p.opcoes?.map((o) => (
-                <Paper
-                  key={o} variant="outlined"
-                  onClick={() => setRespostas((prev) => ({ ...prev, [p.id]: o }))}
+                <Paper key={o} variant="outlined" onClick={() => selecionar(o)}
                   sx={{
                     p: 1.5, borderRadius: 2, cursor: 'pointer', transition: '0.15s',
                     borderColor: respostas[p.id] === o ? '#0d6efd' : '#ccc',
                     bgcolor: respostas[p.id] === o ? '#eef4ff' : 'transparent',
-                    '&:hover': { bgcolor: respostas[p.id] === o ? '#dbeafe' : '#f0f7ff', borderColor: '#0d6efd' },
+                    '&:hover': { bgcolor: '#f0f7ff', borderColor: '#0d6efd' },
                   }}
                 >
                   <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
@@ -252,12 +270,9 @@ export default function Coleta() {
               ))}
             </Box>
           ) : (
-            <TextField
-              value={respostas[p.id] || ''}
-              onChange={(e) => setRespostas((prev) => ({ ...prev, [p.id]: e.target.value }))}
+            <TextField value={respostas[p.id] || ''} onChange={(e) => selecionar(e.target.value)}
               placeholder="Digite sua resposta..." multiline rows={3} fullWidth
-              sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }}
-            />
+              sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }} />
           )}
 
           <Box sx={{ mt: 2 }}>
@@ -267,25 +282,22 @@ export default function Coleta() {
           </Box>
         </Paper>
 
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          {qAtual > 0 && (
-            <Button variant="contained" onClick={anterior} sx={{ borderRadius: 2, py: 1.2, flex: 1, bgcolor: '#6c757d', '&:hover': { bgcolor: '#5a6268' } }}>
-              Voltar
-            </Button>
-          )}
-
-          {!todasRespondidas && (
-            <Button variant="contained" onClick={proxima} disabled={!respostas[p?.id]?.toString().trim() && p?.tipo !== 'aberta'} sx={{ borderRadius: 2, py: 1.2, flex: 1, bgcolor: '#0d6efd' }}>
+        {isLast && jaRespondeu ? (
+          <Button variant="contained" color="success" size="large" startIcon={<CheckCircleIcon />} onClick={salvarTudo} disabled={salvando} fullWidth sx={{ borderRadius: 2, py: 1.5, fontSize: '1rem' }}>
+            {salvando ? 'Salvando...' : 'Salvar Pesquisa'}
+          </Button>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            {qAtual > 0 && (
+              <Button variant="contained" onClick={anterior} sx={{ borderRadius: 2, py: 1.2, flex: 1, bgcolor: '#6c757d', '&:hover': { bgcolor: '#5a6268' } }}>
+                Voltar
+              </Button>
+            )}
+            <Button variant="contained" onClick={proxima} disabled={!podeAvancar} sx={{ borderRadius: 2, py: 1.2, flex: 1, bgcolor: '#0d6efd' }}>
               Próxima
             </Button>
-          )}
-
-          {todasRespondidas && (
-            <Button variant="contained" color="success" size="large" startIcon={<CheckCircleIcon />} onClick={salvarTudo} disabled={salvando} sx={{ borderRadius: 2, py: 1.2, flex: 1, fontSize: '0.9rem' }}>
-              {salvando ? 'Salvando...' : 'Salvar Pesquisa'}
-            </Button>
-          )}
-        </Box>
+          </Box>
+        )}
       </Box>
     )
   }
@@ -349,8 +361,7 @@ export default function Coleta() {
               ))}
             </Box>
           ) : (
-            <TextField
-              value={perfil[campo.id] || ''}
+            <TextField value={perfil[campo.id] || ''}
               onChange={(e) => setPerfil((prev) => ({ ...prev, [campo.id]: e.target.value }))}
               onKeyDown={(e) => { if (e.key === 'Enter' && perfil[campo.id]?.trim()) { salvarRascunho(); if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() } }}
               placeholder={`${campo.label} e pressione Enter`}
@@ -391,7 +402,7 @@ export default function Coleta() {
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', pb: 2, gap: 1 }}>
           <Button variant="contained" onClick={continuarRascunho} sx={{ borderRadius: 2, bgcolor: '#0d6efd' }}>CONTINUAR</Button>
-          <Button variant="contained" onClick={limparRascunho} sx={{ borderRadius: 2, bgcolor: '#dc3545', '&:hover': { bgcolor: '#c82333' } }}>NOVA</Button>
+          <Button variant="contained" onClick={limparRascunho} sx={{ borderRadius: 2, bgcolor: '#f97316', '&:hover': { bgcolor: '#ea580c' } }}>NOVA</Button>
         </DialogActions>
       </Dialog>
     </Box>
