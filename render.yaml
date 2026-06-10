@@ -38,7 +38,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: CORS_ORIGIN
-        value: https://pesquisa-eleitoral.vercel.app
+        value: https://gerardopesquisa.vercel.app,https://pesquisa-eleitoral.vercel.app
 
 databases:
   - name: pesquisa-eleitoral-db

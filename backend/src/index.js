@@ -18,12 +18,18 @@ const seedRoutes = require('./routes/seedRoutes')
 const app = express()
 const PORT = process.env.PORT || 3000
 
-const corsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
-  : '*'
+const corsOrigins = [
+  ...(process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+    : []),
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://gerardopesquisa.vercel.app',
+  'https://pesquisa-eleitoral.vercel.app',
+]
 
 app.use(cors({
-  origin: corsOrigins,
+  origin: corsOrigins.length ? corsOrigins : '*',
   credentials: true,
 }))
 app.use(express.json())
