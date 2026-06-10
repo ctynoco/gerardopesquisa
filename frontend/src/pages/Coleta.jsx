@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, Button, TextField, Select, MenuItem, FormControl, InputLabel, LinearProgress, Paper, Chip, IconButton } from '@mui/material'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { Box, Typography, Button, TextField, Select, MenuItem, FormControl, InputLabel, LinearProgress, Paper, Chip } from '@mui/material'
 import HowToVoteIcon from '@mui/icons-material/HowToVote'
-import SaveIcon from '@mui/icons-material/Save'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import HomeIcon from '@mui/icons-material/Home'
+import SaveIcon from '@mui/icons-material/Save'
 import api from '../services/api'
 
 const PERFIL = [
@@ -30,7 +28,8 @@ export default function Coleta() {
   const [pAtual, setPAtual] = useState(0)
   const [entrevistadoId, setEntrevistadoId] = useState(null)
   const [observacoes, setObservacoes] = useState('')
-  const [salvo, setSalvo] = useState(false)
+  const [concluido, setConcluido] = useState(false)
+  const [salvando, setSalvando] = useState(false)
 
   useEffect(() => { api.get('/pesquisas?limit=100').then((r) => setPesquisas(r.data.pesquisas)) }, [])
 
@@ -54,7 +53,6 @@ export default function Coleta() {
 
   async function responder(perguntaId, valor) {
     if (!entrevistadoId) return
-    setSalvo(false)
     setRespostas((prev) => ({ ...prev, [perguntaId]: valor }))
     await api.post('/respostas', {
       pesquisa_id: Number(pesquisaId),
@@ -63,34 +61,31 @@ export default function Coleta() {
       resposta: { valor },
       observacoes: observacoes || null,
     }).catch(() => {})
-    setSalvo(true)
-    setTimeout(() => setSalvo(false), 2000)
-  }
-
-  function avancar() {
-    if (qAtual < perguntas.length - 1) setQAtual((q) => q + 1)
-  }
-
-  function voltar() {
-    if (qAtual > 0) setQAtual((q) => q - 1)
   }
 
   function resetar() {
-    setEtapa(0)
-    setPesquisaId('')
-    setPerguntas([])
-    setRespostas({})
-    setPerfil({})
-    setQAtual(0)
-    setPAtual(0)
-    setEntrevistadoId(null)
-    setObservacoes('')
-    setSalvo(false)
+    setEtapa(0); setPesquisaId(''); setPerguntas([]); setRespostas({}); setPerfil({})
+    setQAtual(0); setPAtual(0); setEntrevistadoId(null); setObservacoes(''); setConcluido(false)
+  }
+
+  async function salvarTudo() {
+    setSalvando(true)
+    for (const [pid, valor] of Object.entries(respostas)) {
+      await api.post('/respostas', {
+        pesquisa_id: Number(pesquisaId),
+        pergunta_id: Number(pid),
+        entrevistado_id: Number(entrevistadoId),
+        resposta: { valor },
+      }).catch(() => {})
+    }
+    setSalvando(false)
+    setConcluido(true)
   }
 
   const totalSteps = PERFIL.length + perguntas.length
   const currentStep = etapa === 1 ? pAtual : etapa === 2 ? PERFIL.length + qAtual : 0
   const progressPct = totalSteps > 0 ? ((currentStep) / totalSteps) * 100 : 0
+  const qtdRespondidas = Object.keys(respostas).length
 
   // Tela final — ENTREVISTA ENCERRADA
   if (etapa === 3) {
@@ -116,37 +111,30 @@ export default function Coleta() {
     )
   }
 
-  // Etapa 2 — Perguntas do questionário
+  // Etapa 2 — Perguntas
   if (etapa === 2 && perguntas.length > 0) {
     const p = perguntas[qAtual]
     const isLast = qAtual === perguntas.length - 1
-    const jaRespondeu = respostas[p?.id]
+    const jaRespondeu = !!respostas[p?.id]
+    const todasRespondidas = qtdRespondidas >= perguntas.length
 
-    // Se for a última pergunta e já respondeu, mostra botão FIM DA PESQUISA
-    if (isLast && jaRespondeu && Object.keys(respostas).length >= perguntas.length) {
+    // Se concluiu (clicou Salvar Pesquisa)
+    if (concluido) {
       return (
         <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <HowToVoteIcon color="primary" />
-            <Box sx={{ flex: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-                <Typography variant="caption" fontWeight={600}>{totalSteps}/{totalSteps}</Typography>
-                <Typography variant="caption" color="text.secondary">100%</Typography>
-              </Box>
-              <LinearProgress variant="determinate" value={100} sx={{ height: 6, borderRadius: 3 }} />
-            </Box>
-          </Box>
-          <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
-            <CheckCircleIcon color="success" sx={{ fontSize: 56, mb: 2 }} />
-            <Typography variant="h5" fontWeight={700} sx={{ mb: 1, fontSize: '1.2rem' }}>Questionário Concluído</Typography>
+          <Paper elevation={0} sx={{ p: { xs: 3, sm: 4 }, border: '2px solid', borderColor: 'success.main', borderRadius: 3, textAlign: 'center' }}>
+            <CheckCircleIcon color="success" sx={{ fontSize: 64, mb: 2 }} />
+            <Typography variant="h4" fontWeight={700} sx={{ mb: 1, fontSize: '1.4rem' }}>Questionário Concluído</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Todas as perguntas foram respondidas. Clique em FINALIZAR para encerrar a entrevista.
+              A presente entrevista foi concluída e validada pelo sistema.
             </Typography>
-            <Button
-              variant="contained" color="success" size="large"
-              onClick={() => setEtapa(3)}
-              sx={{ borderRadius: 2, py: 1.5, px: 5, fontSize: '1rem' }}
-            >
+            <Box sx={{ textAlign: 'left', backgroundColor: 'action.hover', p: 2, borderRadius: 2, mb: 3 }}>
+              <Typography variant="caption" display="block" sx={{ mb: 0.5 }}><strong>Nº:</strong> {entrevistadoId}</Typography>
+              <Typography variant="caption" display="block" sx={{ mb: 0.5 }}><strong>Entrevistado:</strong> {perfil.nome}</Typography>
+              <Typography variant="caption" display="block" sx={{ mb: 0.5 }}><strong>Data:</strong> {dataStr}</Typography>
+              <Typography variant="caption" display="block"><strong>Hora:</strong> {horaStr}</Typography>
+            </Box>
+            <Button variant="contained" color="success" size="large" onClick={() => setEtapa(3)} sx={{ borderRadius: 2, py: 1.5, px: 5, fontSize: '1rem' }}>
               FIM DA PESQUISA
             </Button>
           </Paper>
@@ -156,7 +144,6 @@ export default function Coleta() {
 
     return (
       <Box sx={{ maxWidth: 520, mx: 'auto' }}>
-        {/* Info Box */}
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, backgroundColor: 'action.hover' }}>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'space-between' }}>
             <Typography variant="caption"><strong>Nº:</strong> {entrevistadoId}</Typography>
@@ -166,7 +153,6 @@ export default function Coleta() {
           </Box>
         </Paper>
 
-        {/* Progresso */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
           <HowToVoteIcon color="primary" />
           <Box sx={{ flex: 1 }}>
@@ -178,7 +164,6 @@ export default function Coleta() {
           </Box>
         </Box>
 
-        {/* Pergunta */}
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
           <Typography variant="body1" fontWeight={600} sx={{ mb: 2, fontSize: '1rem', lineHeight: 1.4 }}>{p.titulo}</Typography>
 
@@ -186,9 +171,8 @@ export default function Coleta() {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {p.opcoes?.map((o) => (
                 <Paper
-                  key={o}
-                  variant="outlined"
-                  onClick={() => { responder(p.id, o); if (!isLast || p.tipo === 'unica_escolha') setTimeout(avancar, 120) }}
+                  key={o} variant="outlined"
+                  onClick={() => { responder(p.id, o); if (!isLast) setTimeout(() => setQAtual((q) => q + 1), 100) }}
                   sx={{
                     p: 1.5, borderRadius: 2, cursor: 'pointer', transition: '0.15s',
                     borderColor: respostas[p.id] === o ? 'primary.main' : 'divider',
@@ -205,52 +189,30 @@ export default function Coleta() {
             <TextField
               value={respostas[p.id] || ''}
               onChange={(e) => setRespostas((prev) => ({ ...prev, [p.id]: e.target.value }))}
-              placeholder="Digite a resposta..."
-              multiline rows={3} fullWidth
+              onKeyDown={(e) => { if (e.key === 'Enter' && respostas[p.id]?.trim()) { responder(p.id, respostas[p.id]); if (!isLast) setTimeout(() => setQAtual((q) => q + 1), 100) } }}
+              placeholder="Digite a resposta e pressione Enter..." multiline rows={3} fullWidth
               sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }}
             />
           )}
 
-          {/* Observações */}
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Observações do entrevistador</Typography>
-            <TextField
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-              placeholder="Anotações sobre esta pergunta..."
-              multiline rows={2} size="small" fullWidth
-              sx={{ '& .MuiInputBase-root': { borderRadius: 2, fontSize: '0.8rem' } }}
-            />
+            <TextField value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Anotações sobre esta pergunta..." multiline rows={2} size="small" fullWidth
+              sx={{ '& .MuiInputBase-root': { borderRadius: 2, fontSize: '0.8rem' } }} />
           </Box>
         </Paper>
 
-        {/* Footer */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {qAtual > 0 && <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={voltar} sx={{ borderRadius: 2, py: 1.2, flex: 1 }}>Voltar</Button>}
-          <Button
-            variant="outlined" color={salvo ? 'success' : 'inherit'}
-            startIcon={<SaveIcon />}
-            onClick={() => { if (p?.id && respostas[p.id]) responder(p.id, respostas[p.id]) }}
-            disabled={!respostas[p?.id]?.trim() && p?.tipo === 'aberta'}
-            sx={{ borderRadius: 2, py: 1.2, flex: 1 }}
-          >
-            {salvo ? 'Salvo ✓' : 'Salvar'}
+        {/* Botão Salvar Pesquisa aparece após responder todas */}
+        {todasRespondidas && (
+          <Button variant="contained" color="success" size="large" startIcon={<SaveIcon />} onClick={salvarTudo} disabled={salvando} fullWidth sx={{ borderRadius: 2, py: 1.5, fontSize: '1rem' }}>
+            {salvando ? 'Salvando...' : 'Salvar Pesquisa'}
           </Button>
-          {p?.tipo === 'aberta' && (
-            <Button variant="contained" endIcon={isLast ? <CheckCircleIcon /> : <ArrowForwardIcon />}
-              onClick={() => { responder(p.id, respostas[p.id] || ''); if (!isLast) avancar() }}
-              disabled={!respostas[p.id]?.trim()}
-              sx={{ borderRadius: 2, py: 1.2, flex: 1 }}
-            >
-              {isLast ? 'Finalizar' : 'Próxima'}
-            </Button>
-          )}
-        </Box>
+        )}
       </Box>
     )
   }
 
-  // Etapa 1 — Perfil do Entrevistado
+  // Etapa 1 — Perfil
   if (etapa === 1) {
     const campo = PERFIL[pAtual]
     if (!campo) { salvarPerfil(); return null }
@@ -259,7 +221,6 @@ export default function Coleta() {
 
     return (
       <Box sx={{ maxWidth: 520, mx: 'auto' }}>
-        {/* Info Box */}
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, backgroundColor: 'action.hover' }}>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'space-between' }}>
             <Typography variant="caption"><strong>Nº:</strong> Pendente</Typography>
@@ -269,7 +230,6 @@ export default function Coleta() {
           </Box>
         </Paper>
 
-        {/* Progresso */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
           <HowToVoteIcon color="primary" />
           <Box sx={{ flex: 1 }}>
@@ -281,7 +241,6 @@ export default function Coleta() {
           </Box>
         </Box>
 
-        {/* Campo Perfil */}
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
           <Typography variant="caption" color="text.secondary" fontWeight={600}>Perfil do Entrevistado</Typography>
           <Typography variant="body1" fontWeight={600} sx={{ mb: 2, mt: 0.5, fontSize: '1rem' }}>{campo.label}</Typography>
@@ -289,9 +248,7 @@ export default function Coleta() {
           {campo.type === 'select' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {campo.opts.map((o) => (
-                <Paper
-                  key={o}
-                  variant="outlined"
+                <Paper key={o} variant="outlined"
                   onClick={() => { setPerfil((prev) => ({ ...prev, [campo.id]: o })); setTimeout(() => { if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() }, 120) }}
                   sx={{
                     p: 1.5, borderRadius: 2, cursor: 'pointer', transition: '0.15s',
@@ -309,29 +266,14 @@ export default function Coleta() {
             <TextField
               value={perfil[campo.id] || ''}
               onChange={(e) => setPerfil((prev) => ({ ...prev, [campo.id]: e.target.value }))}
-              placeholder={campo.label}
-              type={campo.type === 'number' ? 'number' : 'text'}
-              fullWidth autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter' && perfil[campo.id]?.trim()) { if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() } }}
+              placeholder={`${campo.label} e pressione Enter...`}
+              type={campo.type === 'number' ? 'number' : 'text'} fullWidth autoFocus
               inputProps={campo.maxLen ? { maxLength: campo.maxLen } : {}}
               sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }}
             />
           )}
         </Paper>
-
-        {/* Footer */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {pAtual > 0 && <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => setPAtual((p) => p - 1)} sx={{ borderRadius: 2, py: 1.2, flex: 1 }}>Voltar</Button>}
-          <Box sx={{ flex: 1 }} />
-          {campo.type !== 'select' && (
-            <Button variant="contained" endIcon={isLastPerfil ? <CheckCircleIcon /> : <ArrowForwardIcon />}
-              onClick={() => { if (!isLastPerfil) setPAtual((p) => p + 1); else salvarPerfil() }}
-              disabled={!perfil[campo.id]?.trim()}
-              sx={{ borderRadius: 2, py: 1.2, flex: 1 }}
-            >
-              {isLastPerfil ? 'Iniciar Pesquisa' : 'Próximo'}
-            </Button>
-          )}
-        </Box>
       </Box>
     )
   }
@@ -342,7 +284,6 @@ export default function Coleta() {
       <Typography variant="h1" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1, fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
         <HowToVoteIcon /> Coleta
       </Typography>
-
       <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
         <FormControl fullWidth sx={{ mb: 2 }}>
           <InputLabel>Selecione a pesquisa</InputLabel>
@@ -350,7 +291,7 @@ export default function Coleta() {
             {pesquisas.map((p) => <MenuItem key={p.id} value={p.id}>{p.titulo}</MenuItem>)}
           </Select>
         </FormControl>
-        <Button variant="contained" disabled={!pesquisaId} startIcon={<ArrowForwardIcon />} onClick={iniciar} fullWidth sx={{ py: 1.5, borderRadius: 2 }}>
+        <Button variant="contained" disabled={!pesquisaId} onClick={iniciar} fullWidth sx={{ py: 1.5, borderRadius: 2 }}>
           Iniciar Coleta
         </Button>
       </Paper>
