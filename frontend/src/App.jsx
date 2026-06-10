@@ -27,6 +27,7 @@ import Coleta from './pages/Coleta'
 import Tabulacao from './pages/Tabulacao'
 import Cruzamentos from './pages/Cruzamentos'
 import Relatorios from './pages/Relatorios'
+import Georreferenciamento from './pages/Georreferenciamento'
 import Cotas from './pages/Cotas'
 import Admin from './pages/Admin'
 
@@ -39,6 +40,7 @@ const icons = {
   Tabulação: <TableChartIcon />,
   Cruzamentos: <MergeTypeIcon />,
   Cotas: <TrackChangesIcon />,
+  Mapa: <MapIcon />,
   Relatórios: <BarChartIcon />,
   Admin: <AdminPanelSettingsIcon />,
 }
@@ -159,6 +161,7 @@ function AdminLayout() {
       { to: '/tabulacao', label: 'Tabulação', element: <Tabulacao /> },
       { to: '/cruzamentos', label: 'Cruzamentos', element: <Cruzamentos /> },
       { to: '/cotas', label: 'Cotas', element: <Cotas /> },
+      { to: '/georreferenciamento', label: 'Mapa', element: <Georreferenciamento /> },
       { to: '/relatorios', label: 'Relatórios', element: <Relatorios /> },
       { to: '/admin', label: 'Admin', element: <Admin /> },
     ]} />
