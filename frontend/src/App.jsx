@@ -17,6 +17,7 @@ import TrackChangesIcon from '@mui/icons-material/TrackChanges'
 import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import MergeTypeIcon from '@mui/icons-material/MergeType'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Login from './pages/Login'
@@ -28,6 +29,7 @@ import Tabulacao from './pages/Tabulacao'
 import Cruzamentos from './pages/Cruzamentos'
 import Relatorios from './pages/Relatorios'
 import Georreferenciamento from './pages/Georreferenciamento'
+import Supervisao from './pages/Supervisao'
 import Cotas from './pages/Cotas'
 import Admin from './pages/Admin'
 
@@ -40,6 +42,7 @@ const icons = {
   Tabulação: <TableChartIcon />,
   Cruzamentos: <MergeTypeIcon />,
   Cotas: <TrackChangesIcon />,
+  Supervisão: <VisibilityIcon />,
   Mapa: <MapIcon />,
   Relatórios: <BarChartIcon />,
   Admin: <AdminPanelSettingsIcon />,
@@ -161,6 +164,7 @@ function AdminLayout() {
       { to: '/tabulacao', label: 'Tabulação', element: <Tabulacao /> },
       { to: '/cruzamentos', label: 'Cruzamentos', element: <Cruzamentos /> },
       { to: '/cotas', label: 'Cotas', element: <Cotas /> },
+      { to: '/supervisao', label: 'Supervisão', element: <Supervisao /> },
       { to: '/georreferenciamento', label: 'Mapa', element: <Georreferenciamento /> },
       { to: '/relatorios', label: 'Relatórios', element: <Relatorios /> },
       { to: '/admin', label: 'Admin', element: <Admin /> },
