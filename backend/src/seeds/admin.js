@@ -1,16 +1,24 @@
 const bcrypt = require('bcryptjs')
 const db = require('../config/database')
 
+const usuarios = [
+  { nome: 'Administrador', telefone: '(85) 999149850', senha: '2314@#', perfil: 'admin' },
+  { nome: 'Administrador', telefone: '(85) 996962828', senha: '2314@#', perfil: 'admin' },
+]
+
 async function seed() {
-  const senhaHash = await bcrypt.hash('2314@#', 10)
-  const result = await db.query(
-    `INSERT INTO usuarios (nome, telefone, senha, perfil, ativo)
-     VALUES ($1, $2, $3, $4, true)
-     ON CONFLICT (telefone) DO UPDATE SET senha = $3, perfil = $4, ativo = true
-     RETURNING id, nome, telefone, perfil`,
-    ['Administrador', '(85) 996962828', senhaHash, 'admin']
-  )
-  console.log('Admin user created:', result.rows[0])
+  for (const u of usuarios) {
+    const senhaHash = await bcrypt.hash(u.senha, 10)
+    const result = await db.query(
+      `INSERT INTO usuarios (nome, telefone, senha, perfil, ativo)
+       VALUES ($1, $2, $3, $4, true)
+       ON CONFLICT (telefone) DO NOTHING
+       RETURNING id, nome, telefone, perfil`,
+      [u.nome, u.telefone, senhaHash, u.perfil]
+    )
+    console.log('Usuario:', result.rows[0])
+  }
+  console.log('Seed concluido')
   process.exit(0)
 }
 
