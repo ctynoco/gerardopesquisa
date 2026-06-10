@@ -13,6 +13,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import LogoutIcon from '@mui/icons-material/Logout'
 import PollIcon from '@mui/icons-material/Poll'
+import TrackChangesIcon from '@mui/icons-material/TrackChanges'
 import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import MergeTypeIcon from '@mui/icons-material/MergeType'
@@ -26,6 +27,7 @@ import Coleta from './pages/Coleta'
 import Tabulacao from './pages/Tabulacao'
 import Cruzamentos from './pages/Cruzamentos'
 import Relatorios from './pages/Relatorios'
+import Cotas from './pages/Cotas'
 import Admin from './pages/Admin'
 
 const DRAWER_W = 260
@@ -36,6 +38,7 @@ const icons = {
   Coleta: <HowToVoteIcon />,
   Tabulação: <TableChartIcon />,
   Cruzamentos: <MergeTypeIcon />,
+  Cotas: <TrackChangesIcon />,
   Relatórios: <BarChartIcon />,
   Admin: <AdminPanelSettingsIcon />,
 }
@@ -155,6 +158,7 @@ function AdminLayout() {
       { to: '/coleta', label: 'Coleta', element: <Coleta /> },
       { to: '/tabulacao', label: 'Tabulação', element: <Tabulacao /> },
       { to: '/cruzamentos', label: 'Cruzamentos', element: <Cruzamentos /> },
+      { to: '/cotas', label: 'Cotas', element: <Cotas /> },
       { to: '/relatorios', label: 'Relatórios', element: <Relatorios /> },
       { to: '/admin', label: 'Admin', element: <Admin /> },
     ]} />

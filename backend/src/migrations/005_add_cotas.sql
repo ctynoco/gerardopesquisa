@@ -1,0 +1,2 @@
+ALTER TABLE pesquisas ADD COLUMN IF NOT EXISTS cotas JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE pesquisas ADD COLUMN IF NOT EXISTS cotas_ativas BOOLEAN DEFAULT false;

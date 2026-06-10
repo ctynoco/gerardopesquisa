@@ -15,6 +15,7 @@ const exportacaoRoutes = require('./routes/exportacaoRoutes')
 const usuariosRoutes = require('./routes/usuariosRoutes')
 const auditoriaRoutes = require('./routes/auditoriaRoutes')
 const geograficoRoutes = require('./routes/geograficoRoutes')
+const cotasRoutes = require('./routes/cotasRoutes')
 const seedRoutes = require('./routes/seedRoutes')
 
 const app = express()
@@ -54,6 +55,7 @@ app.use('/api/geografico', geograficoRoutes)
 app.use('/api', seedRoutes)
 app.use('/api', demoRoutes)
 app.use('/api', cruzamentosRoutes)
+app.use('/api', cotasRoutes)
 
 app.use(errorHandler)
 
