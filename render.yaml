@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: pesquisa-eleitoral-api
+    env: node
+    region: ohio
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 3000
+      - key: DB_HOST
+        fromDatabase:
+          name: pesquisa-eleitoral-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: pesquisa-eleitoral-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: pesquisa-eleitoral-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: pesquisa-eleitoral-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pesquisa-eleitoral-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        value: https://pesquisa-eleitoral.vercel.app
+
+databases:
+  - name: pesquisa-eleitoral-db
+    plan: free
+    region: ohio
+    databaseName: pesquisa_eleitoral
+    ipAllowList: []
