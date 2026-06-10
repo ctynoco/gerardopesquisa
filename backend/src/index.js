@@ -13,6 +13,7 @@ const exportacaoRoutes = require('./routes/exportacaoRoutes')
 const usuariosRoutes = require('./routes/usuariosRoutes')
 const auditoriaRoutes = require('./routes/auditoriaRoutes')
 const geograficoRoutes = require('./routes/geograficoRoutes')
+const seedRoutes = require('./routes/seedRoutes')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -42,6 +43,7 @@ app.use('/api/exportacao', exportacaoRoutes)
 app.use('/api/usuarios', usuariosRoutes)
 app.use('/api/auditoria', auditoriaRoutes)
 app.use('/api/geografico', geograficoRoutes)
+app.use('/api', seedRoutes)
 
 app.use(errorHandler)
 
