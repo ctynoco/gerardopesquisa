@@ -1,24 +1,28 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo } from 'react'
+import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material'
+import { light, dark } from '../styles/theme'
 
 const ThemeContext = createContext()
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'light'
-  })
+  const [mode, setMode] = useState(() => localStorage.getItem('theme') || 'light')
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
-  }, [theme])
+    localStorage.setItem('theme', mode)
+  }, [mode])
+
+  const theme = useMemo(() => (mode === 'dark' ? dark : light), [mode])
 
   function toggle() {
-    setTheme((t) => (t === 'light' ? 'dark' : 'light'))
+    setMode((t) => (t === 'light' ? 'dark' : 'light'))
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
-      {children}
+    <ThemeContext.Provider value={{ theme: mode, toggle }}>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </MuiThemeProvider>
     </ThemeContext.Provider>
   )
 }

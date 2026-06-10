@@ -1,28 +1,30 @@
 import { useState, useEffect } from 'react'
+import { Box, Typography, Tabs, Tab, Button, TextField, Select, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Chip, IconButton, Tooltip } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
+import { ptBR } from '@mui/x-data-grid/locales'
+import AddIcon from '@mui/icons-material/Add'
+import EditIcon from '@mui/icons-material/Edit'
+import BlockIcon from '@mui/icons-material/Block'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DeleteIcon from '@mui/icons-material/Delete'
 import api from '../services/api'
 
 export default function Admin() {
-  const [aba, setAba] = useState('usuarios')
+  const [aba, setAba] = useState(0)
   const [usuarios, setUsuarios] = useState([])
   const [auditoria, setAuditoria] = useState([])
-  const [showForm, setShowForm] = useState(false)
+  const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' })
   const [editando, setEditando] = useState(null)
 
   useEffect(() => { carregarUsuarios(); carregarAuditoria() }, [])
 
   async function carregarUsuarios() {
-    try {
-      const res = await api.get('/usuarios')
-      setUsuarios(res.data.usuarios)
-    } catch {}
+    try { const r = await api.get('/usuarios'); setUsuarios(r.data.usuarios) } catch {}
   }
 
   async function carregarAuditoria() {
-    try {
-      const res = await api.get('/auditoria')
-      setAuditoria(res.data.auditoria)
-    } catch {}
+    try { const r = await api.get('/auditoria'); setAuditoria(r.data.auditoria) } catch {}
   }
 
   async function salvar(e) {
@@ -33,7 +35,7 @@ export default function Admin() {
       } else {
         await api.post('/usuarios', form)
       }
-      setShowForm(false)
+      setOpen(false)
       setEditando(null)
       setForm({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' })
       carregarUsuarios()
@@ -45,7 +47,7 @@ export default function Admin() {
   function editar(u) {
     setEditando(u.id)
     setForm({ nome: u.nome, telefone: u.telefone, senha: '', perfil: u.perfil })
-    setShowForm(true)
+    setOpen(true)
   }
 
   async function alternarAtivo(u) {
@@ -54,88 +56,78 @@ export default function Admin() {
   }
 
   async function remover(id) {
-    if (!confirm('Remover usuário?')) return
-    try {
-      await api.delete(`/usuarios/${id}`)
-      carregarUsuarios()
-    } catch (err) {
-      alert(err.response?.data?.error || 'Erro ao remover')
-    }
+    if (!window.confirm('Remover usuário?')) return
+    try { await api.delete(`/usuarios/${id}`); carregarUsuarios() } catch (err) { alert(err.response?.data?.error || 'Erro ao remover') }
   }
 
+  const colUsuarios = [
+    { field: 'nome', headerName: 'Nome', flex: 1 },
+    { field: 'telefone', headerName: 'Telefone', width: 150 },
+    { field: 'perfil', headerName: 'Perfil', width: 140, renderCell: ({ value }) => <Chip label={value} size="small" color={value === 'admin' ? 'primary' : 'default'} variant="outlined" /> },
+    { field: 'ativo', headerName: 'Status', width: 100, renderCell: ({ value }) => <Chip label={value ? 'Ativo' : 'Inativo'} size="small" color={value ? 'success' : 'default'} /> },
+    { field: 'actions', headerName: 'Ações', width: 200, sortable: false, renderCell: ({ row }) => (
+      <Box sx={{ display: 'flex', gap: 0.5 }}>
+        <Tooltip title="Editar"><IconButton size="small" onClick={() => editar(row)}><EditIcon fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title={row.ativo ? 'Desativar' : 'Ativar'}><IconButton size="small" onClick={() => alternarAtivo(row)}>{row.ativo ? <BlockIcon fontSize="small" color="warning" /> : <CheckCircleIcon fontSize="small" color="success" />}</IconButton></Tooltip>
+        <Tooltip title="Remover"><IconButton size="small" onClick={() => remover(row.id)}><DeleteIcon fontSize="small" color="error" /></IconButton></Tooltip>
+      </Box>
+    )},
+  ]
+
+  const colAuditoria = [
+    { field: 'created_at', headerName: 'Data', width: 180, valueFormatter: (v) => v ? new Date(v).toLocaleString('pt-BR') : '' },
+    { field: 'usuario_nome', headerName: 'Usuário', flex: 1, valueFormatter: (v) => v || '-' },
+    { field: 'acao', headerName: 'Ação', width: 120 },
+    { field: 'entidade', headerName: 'Entidade', width: 180, renderCell: ({ row }) => `${row.entidade} #${row.entidade_id || ''}` },
+  ]
+
   return (
-    <div>
-      <h1>Administração</h1>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <button className={`btn ${aba === 'usuarios' ? 'btn-primary' : ''}`} onClick={() => setAba('usuarios')}>Usuários</button>
-        <button className={`btn ${aba === 'auditoria' ? 'btn-primary' : ''}`} onClick={() => setAba('auditoria')}>Auditoria</button>
-      </div>
+    <Box>
+      <Typography variant="h1" sx={{ mb: 2 }}>Administração</Typography>
 
-      {aba === 'usuarios' && (
-        <>
-          <div className="page-header">
-            <h2 style={{ fontSize: 18, margin: 0 }}>Gerenciar Usuários</h2>
-            <button className="btn" onClick={() => { setShowForm(true); setEditando(null); setForm({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' }) }}>
+      <Tabs value={aba} onChange={(_, v) => setAba(v)} sx={{ mb: 2 }}>
+        <Tab label="Usuários" />
+        <Tab label="Auditoria" />
+      </Tabs>
+
+      {aba === 0 && (
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h2">Gerenciar Usuários</Typography>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setOpen(true); setEditando(null); setForm({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' }) }}>
               Novo Usuário
-            </button>
-          </div>
+            </Button>
+          </Box>
 
-          {showForm && (
-            <form className="form" onSubmit={salvar}>
-              <input placeholder="Nome" value={form.nome} onChange={(e) => setForm({...form, nome: e.target.value})} required />
-              <input type="tel" placeholder="Telefone" value={form.telefone} onChange={(e) => setForm({...form, telefone: e.target.value})} required />
-              {!editando && <input type="password" placeholder="Senha" value={form.senha} onChange={(e) => setForm({...form, senha: e.target.value})} required />}
-              <select value={form.perfil} onChange={(e) => setForm({...form, perfil: e.target.value})}>
-                <option value="entrevistador">Entrevistador</option>
-                <option value="admin">Admin</option>
-              </select>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button type="submit" className="btn btn-primary">{editando ? 'Atualizar' : 'Criar'}</button>
-                <button type="button" className="btn" onClick={() => { setShowForm(false); setEditando(null) }}>Cancelar</button>
-              </div>
-            </form>
-          )}
+          <DataGrid rows={usuarios} columns={colUsuarios} pageSizeOptions={[10, 25, 50]} getRowId={(r) => r.id} autoHeight disableRowSelectionOnClick density="comfortable" localeText={ptBR.components.MuiDataGrid.defaultProps.localeText} sx={{ border: 0 }} />
 
-          <table>
-            <thead><tr><th>Nome</th><th>Telefone</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody>
-              {usuarios.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.nome}</td>
-                  <td>{u.telefone}</td>
-                  <td><span className="badge">{u.perfil}</span></td>
-                  <td><span className={`status ${u.ativo ? 'status-ativa' : 'status-rascunho'}`}>{u.ativo ? 'Ativo' : 'Inativo'}</span></td>
-                  <td style={{ display: 'flex', gap: 4 }}>
-                    <button className="btn" onClick={() => editar(u)}>Editar</button>
-                    <button className="btn" onClick={() => alternarAtivo(u)}>{u.ativo ? 'Desativar' : 'Ativar'}</button>
-                    <button className="btn btn-danger" onClick={() => remover(u.id)}>Remover</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+          <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+            <Box component="form" onSubmit={salvar}>
+              <DialogTitle>{editando ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
+                <TextField label="Nome" value={form.nome} onChange={(e) => setForm({...form, nome: e.target.value})} required size="small" fullWidth />
+                <TextField label="Telefone" type="tel" value={form.telefone} onChange={(e) => setForm({...form, telefone: e.target.value})} required size="small" fullWidth />
+                {!editando && <TextField label="Senha" type="password" value={form.senha} onChange={(e) => setForm({...form, senha: e.target.value})} required size="small" fullWidth />}
+                <Select value={form.perfil} onChange={(e) => setForm({...form, perfil: e.target.value})} size="small" fullWidth>
+                  <MenuItem value="entrevistador">Entrevistador</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                </Select>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button type="submit" variant="contained">{editando ? 'Atualizar' : 'Criar'}</Button>
+              </DialogActions>
+            </Box>
+          </Dialog>
+        </Box>
       )}
 
-      {aba === 'auditoria' && (
-        <>
-          <h2 style={{ fontSize: 18 }}>Log de Auditoria</h2>
-          <table>
-            <thead><tr><th>Data</th><th>Usuário</th><th>Ação</th><th>Entidade</th></tr></thead>
-            <tbody>
-              {auditoria.map((a) => (
-                <tr key={a.id}>
-                  <td>{new Date(a.created_at).toLocaleString('pt-BR')}</td>
-                  <td>{a.usuario_nome || '-'}</td>
-                  <td>{a.acao}</td>
-                  <td>{a.entidade} #{a.entidade_id || ''}</td>
-                </tr>
-              ))}
-              {!auditoria.length && <tr><td colSpan={4} style={{ textAlign: 'center', color: '#94a3b8' }}>Nenhum registro de auditoria</td></tr>}
-            </tbody>
-          </table>
-        </>
+      {aba === 1 && (
+        <Box>
+          <Typography variant="h2" sx={{ mb: 2 }}>Log de Auditoria</Typography>
+          <DataGrid rows={auditoria} columns={colAuditoria} pageSizeOptions={[10, 25, 50]} getRowId={(r) => r.id} autoHeight disableRowSelectionOnClick density="compact" localeText={ptBR.components.MuiDataGrid.defaultProps.localeText} sx={{ border: 0 }} />
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Box, Typography, Button, Card, CardContent, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -6,6 +7,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import 'leaflet/dist/leaflet.css'
 import api from '../services/api'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({ iconUrl: markerIcon, iconRetinaUrl: markerIcon2x, shadowUrl: markerShadow })
@@ -51,42 +53,51 @@ export default function Mapa() {
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <h1>Mapa Geográfico</h1>
-      </div>
-      <div className="form-row" style={{ marginBottom: 20 }}>
-        <select value={pesquisaId} onChange={(e) => setPesquisaId(e.target.value)}>
-          <option value="">Selecione a pesquisa</option>
-          {pesquisas.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
-        </select>
-        <button className="btn btn-primary" disabled={!pesquisaId} onClick={carregar}>Carregar Mapa</button>
-      </div>
+    <Box>
+      <Typography variant="h1" sx={{ mb: 2 }}>Mapa Geográfico</Typography>
+
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'flex-end' }}>
+        <FormControl size="small" sx={{ minWidth: 350 }}>
+          <InputLabel>Selecione a pesquisa</InputLabel>
+          <Select value={pesquisaId} label="Selecione a pesquisa" onChange={(e) => setPesquisaId(e.target.value)}>
+            {pesquisas.map((p) => <MenuItem key={p.id} value={p.id}>{p.titulo}</MenuItem>)}
+          </Select>
+        </FormControl>
+        <Button variant="contained" disabled={!pesquisaId} startIcon={<PlayArrowIcon />} onClick={carregar}>Carregar Mapa</Button>
+      </Box>
+
       {distribuicao && (
-        <>
-          <div style={{ height: 500, borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
-            <MapContainer center={[-14.2350, -51.9253]} zoom={4} style={{ height: '100%', width: '100%' }}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              {markers.map((m) => (
-                <Marker key={m.cidade} position={[m.lat, m.lng]}>
-                  <Popup>
-                    <strong>{m.cidade}</strong> - {m.estado}<br />
-                    Entrevistados: {m.qtd}
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
-          <div className="cards">
+        <Box>
+          <Card sx={{ mb: 3 }}>
+            <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+              <Box sx={{ height: 500, borderRadius: 1, overflow: 'hidden' }}>
+                <MapContainer center={[-14.2350, -51.9253]} zoom={4} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  {markers.map((m) => (
+                    <Marker key={m.cidade} position={[m.lat, m.lng]}>
+                      <Popup>
+                        <strong>{m.cidade}</strong> - {m.estado}<br />
+                        Entrevistados: {m.qtd}
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              </Box>
+            </CardContent>
+          </Card>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
             {distribuicao.estados.map((e) => (
-              <div key={e.estado} className="card" style={{ textAlign: 'center' }}>
-                <h3>{e.quantidade}</h3>
-                <p>{e.estado}</p>
-              </div>
+              <Card key={e.estado} sx={{ flex: '1 1 140px', textAlign: 'center' }}>
+                <CardContent>
+                  <Typography variant="h3" color="primary.main" sx={{ fontSize: 28 }}>{e.quantidade}</Typography>
+                  <Typography variant="body2" color="text.secondary">{e.estado}</Typography>
+                </CardContent>
+              </Card>
             ))}
-          </div>
-        </>
+          </Box>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }

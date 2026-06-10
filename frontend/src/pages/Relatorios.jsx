@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Box, Typography, Button, Card, CardContent, Tabs, Tab, FormControl, InputLabel, Select, MenuItem, Chip, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 import { Pie, Bar } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
@@ -8,17 +9,24 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import 'leaflet/dist/leaflet.css'
 import api from '../services/api'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
+import TableChartIcon from '@mui/icons-material/TableChart'
+import DownloadIcon from '@mui/icons-material/Download'
+import CodeIcon from '@mui/icons-material/Code'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({ iconUrl: markerIcon, iconRetinaUrl: markerIcon2x, shadowUrl: markerShadow })
 
+const cores = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
+
 export default function Relatorios() {
   const [pesquisas, setPesquisas] = useState([])
   const [pesquisaId, setPesquisaId] = useState('')
   const [estatisticas, setEstatisticas] = useState(null)
-  const [aba, setAba] = useState('graficos')
+  const [aba, setAba] = useState(0)
 
   useEffect(() => {
     api.get('/pesquisas?limit=100').then((res) => setPesquisas(res.data.pesquisas))
@@ -36,115 +44,118 @@ export default function Relatorios() {
     if (!pesquisaId) return
     const url = api.defaults.baseURL + `/exportacao/${formato}/${pesquisaId}`
     const token = localStorage.getItem('token')
-    const a = document.createElement('a')
-    a.href = url
-    a.setAttribute('download', '')
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     const blob = await res.blob()
+    const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.click()
   }
 
-  const dadosMapa = []
-  if (estatisticas?.perguntas) {
-    for (const p of estatisticas.perguntas) {
-      if (p.tipo === 'unica_escolha' && p.contagem) {
-        for (const c of p.contagem) {
-          dadosMapa.push({ pergunta: p.titulo, valor: c.valor, quantidade: c.quantidade })
-        }
-      }
-    }
-  }
-
   return (
-    <div>
-      <div className="page-header">
-        <h1>Relatórios</h1>
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h1" sx={{ mb: 0 }}>Relatórios</Typography>
         {pesquisaId && (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => exportar('pdf')}>PDF</button>
-            <button className="btn" onClick={() => exportar('excel')}>Excel</button>
-            <button className="btn" onClick={() => exportar('csv')}>CSV</button>
-            <button className="btn" onClick={() => exportar('json')}>JSON</button>
-          </div>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button size="small" variant="outlined" startIcon={<PictureAsPdfIcon />} onClick={() => exportar('pdf')}>PDF</Button>
+            <Button size="small" variant="outlined" startIcon={<TableChartIcon />} onClick={() => exportar('excel')}>Excel</Button>
+            <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={() => exportar('csv')}>CSV</Button>
+            <Button size="small" variant="outlined" startIcon={<CodeIcon />} onClick={() => exportar('json')}>JSON</Button>
+          </Box>
         )}
-      </div>
-      <div className="form-row" style={{ marginBottom: 20 }}>
-        <select value={pesquisaId} onChange={(e) => setPesquisaId(e.target.value)}>
-          <option value="">Selecione a pesquisa</option>
-          {pesquisas.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
-        </select>
-        <button className="btn btn-primary" disabled={!pesquisaId} onClick={carregar}>Carregar</button>
-      </div>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'flex-end' }}>
+        <FormControl size="small" sx={{ minWidth: 350 }}>
+          <InputLabel>Selecione a pesquisa</InputLabel>
+          <Select value={pesquisaId} label="Selecione a pesquisa" onChange={(e) => setPesquisaId(e.target.value)}>
+            {pesquisas.map((p) => <MenuItem key={p.id} value={p.id}>{p.titulo}</MenuItem>)}
+          </Select>
+        </FormControl>
+        <Button variant="contained" disabled={!pesquisaId} startIcon={<PlayArrowIcon />} onClick={carregar}>Carregar</Button>
+      </Box>
 
       {estatisticas && (
-        <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <button className={`btn ${aba === 'graficos' ? 'btn-primary' : ''}`} onClick={() => setAba('graficos')}>Gráficos</button>
-            <button className={`btn ${aba === 'mapa' ? 'btn-primary' : ''}`} onClick={() => setAba('mapa')}>Mapa</button>
-            <button className={`btn ${aba === 'tabela' ? 'btn-primary' : ''}`} onClick={() => setAba('tabela')}>Tabela</button>
-          </div>
+        <Box>
+          <Chip label={`Total de entrevistados: ${estatisticas.total_entrevistados}`} color="primary" sx={{ mb: 2 }} />
 
-          <p>Total de entrevistados: <strong>{estatisticas.total_entrevistados}</strong></p>
+          <Tabs value={aba} onChange={(_, v) => setAba(v)} sx={{ mb: 2 }}>
+            <Tab label="Gráficos" />
+            <Tab label="Mapa" />
+            <Tab label="Tabela" />
+          </Tabs>
 
-          {aba === 'graficos' && (
-            <>
+          {aba === 0 && (
+            <Box>
               {perguntasComGrafico.map((p) => {
-                const colors = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
                 const chartData = {
                   labels: p.contagem.map((c) => c.valor),
-                  datasets: [{ data: p.contagem.map((c) => Number(c.quantidade)), backgroundColor: colors.slice(0, p.contagem.length) }],
+                  datasets: [{ data: p.contagem.map((c) => Number(c.quantidade)), backgroundColor: cores.slice(0, p.contagem.length) }],
                 }
                 return (
-                  <div key={p.pergunta_id} className="chart-container">
-                    <h3>{p.titulo}</h3>
-                    <p>Total: {p.total} respostas</p>
-                    <div style={{ maxWidth: 400, margin: '0 auto' }}>
-                      <Pie data={chartData} />
-                    </div>
-                  </div>
+                  <Card key={p.pergunta_id} sx={{ mb: 2 }}>
+                    <CardContent>
+                      <Typography variant="h3" sx={{ mb: 1 }}>{p.titulo}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Total: {p.total} respostas</Typography>
+                      <Box sx={{ maxWidth: 400, mx: 'auto' }}>
+                        <Pie data={chartData} />
+                      </Box>
+                    </CardContent>
+                  </Card>
                 )
               })}
               {perguntasNumericas.map((p) => (
-                <div key={p.pergunta_id} className="chart-container">
-                  <h3>{p.titulo}</h3>
-                  <p>Média: {Number(p.estatisticas.media).toFixed(2)} | Mín: {p.estatisticas.minimo} | Máx: {p.estatisticas.maximo}</p>
-                </div>
+                <Card key={p.pergunta_id} sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography variant="h3">{p.titulo}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Média: {Number(p.estatisticas.media).toFixed(2)} | Mín: {p.estatisticas.minimo} | Máx: {p.estatisticas.maximo}
+                    </Typography>
+                  </CardContent>
+                </Card>
               ))}
-            </>
+            </Box>
           )}
 
-          {aba === 'mapa' && (
-            <div className="chart-container">
-              <h3>Distribuição Geográfica</h3>
-              <p>Em breve: mapa com distribuição dos entrevistados por localidade.</p>
-              <div style={{ height: 400, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-                Mapa interativo (requer dados de cidade/estado dos entrevistados)
-              </div>
-            </div>
+          {aba === 1 && (
+            <Card>
+              <CardContent>
+                <Typography variant="h3" sx={{ mb: 2 }}>Distribuição Geográfica</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Em breve: mapa com distribuição dos entrevistados por localidade.</Typography>
+                <Box sx={{ height: 400, backgroundColor: 'action.hover', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.secondary' }}>
+                  Mapa interativo (requer dados de cidade/estado dos entrevistados)
+                </Box>
+              </CardContent>
+            </Card>
           )}
 
-          {aba === 'tabela' && (
-            perguntasComGrafico.map((p) => (
-              <div key={p.pergunta_id} className="chart-container">
-                <h3>{p.titulo}</h3>
-                <table>
-                  <thead><tr><th>Opção</th><th>Quantidade</th><th>%</th></tr></thead>
-                  <tbody>
+          {aba === 2 && perguntasComGrafico.map((p) => (
+            <Card key={p.pergunta_id} sx={{ mb: 2 }}>
+              <CardContent>
+                <Typography variant="h3" sx={{ mb: 2 }}>{p.titulo}</Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Opção</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Quantidade</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>%</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {p.contagem.map((c) => (
-                      <tr key={c.valor}>
-                        <td>{c.valor}</td>
-                        <td>{c.quantidade}</td>
-                        <td>{((Number(c.quantidade) / p.total) * 100).toFixed(1)}%</td>
-                      </tr>
+                      <TableRow key={c.valor}>
+                        <TableCell>{c.valor}</TableCell>
+                        <TableCell>{c.quantidade}</TableCell>
+                        <TableCell>{((Number(c.quantidade) / p.total) * 100).toFixed(1)}%</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            ))
-          )}
-        </>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }
