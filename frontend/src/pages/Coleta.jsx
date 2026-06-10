@@ -88,6 +88,7 @@ export default function Coleta() {
   async function salvarPerfil() {
     const body = { pesquisa_id: Number(pesquisaId), ...perfil, consentimento_lgpd: true }
     if (body.idade) body.idade = Number(body.idade)
+    if (body.estado) body.estado = String(body.estado).slice(0, 2)
     const r = await api.post('/entrevistados', body).catch((e) => { console.error('Erro entrevistados:', e.response?.data || e.message); return null })
     if (!r) { setErro('Erro ao salvar perfil. Verifique os dados e tente novamente.'); return }
     setEntrevistadoId(r.data.entrevistado.id)
