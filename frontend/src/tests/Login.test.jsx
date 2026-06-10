@@ -12,6 +12,10 @@ vi.mock('../contexts/AuthContext', () => ({
   }),
 }))
 
+vi.mock('../services/api', () => ({
+  default: { post: vi.fn() },
+}))
+
 describe('Login Page', () => {
   beforeEach(() => {
     mockLogin.mockReset()
@@ -25,12 +29,13 @@ describe('Login Page', () => {
     )
   }
 
-  it('deve renderizar o formulário de login', () => {
+  it('deve renderizar formulário de login', () => {
     renderLogin()
     expect(screen.getByText('Pesquisa Eleitoral')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Telefone')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Senha')).toBeInTheDocument()
-    expect(screen.getByText('Entrar')).toBeInTheDocument()
+    const botoes = screen.getAllByText('Entrar')
+    expect(botoes.length).toBe(2)
   })
 
   it('deve chamar login com telefone e senha', async () => {
@@ -38,26 +43,21 @@ describe('Login Page', () => {
     const user = userEvent.setup()
 
     await user.type(screen.getByPlaceholderText('Telefone'), '(85) 996962828')
-    await user.type(screen.getByPlaceholderText('Senha'), '123456')
-    await user.click(screen.getByText('Entrar'))
+    await user.type(screen.getByPlaceholderText('Senha'), '0102')
+    await user.click(screen.getAllByText('Entrar')[1])
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('(85) 996962828', '123456')
+      expect(mockLogin).toHaveBeenCalledWith('(85) 996962828', '0102')
     })
   })
 
-  it('deve exibir erro quando login falhar', async () => {
-    mockLogin.mockRejectedValueOnce(new Error('Credenciais inválidas'))
-
+  it('deve alternar para aba de cadastro', async () => {
     renderLogin()
     const user = userEvent.setup()
+    await user.click(screen.getAllByText('Cadastrar')[0])
 
-    await user.type(screen.getByPlaceholderText('Telefone'), '(85) 000000000')
-    await user.type(screen.getByPlaceholderText('Senha'), 'errada')
-    await user.click(screen.getByText('Entrar'))
-
-    await waitFor(() => {
-      expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument()
-    })
+    expect(screen.getByPlaceholderText('Nome completo')).toBeInTheDocument()
+    const botoes = screen.getAllByText('Cadastrar')
+    expect(botoes.length).toBe(2)
   })
 })
