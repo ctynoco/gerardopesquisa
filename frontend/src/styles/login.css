@@ -38,3 +38,14 @@
 }
 
 .login-card button:hover { background: #1d4ed8; }
+
+.link-btn {
+  background: none !important;
+  border: none;
+  color: #2563eb !important;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0 !important;
+  font-size: 13px;
+  font-weight: 400;
+}

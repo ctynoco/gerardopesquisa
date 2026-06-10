@@ -5,7 +5,7 @@ import '../styles/login.css'
 
 export default function Login() {
   const { login } = useAuth()
-  const [aba, setAba] = useState('entrar')
+  const [modo, setModo] = useState('entrar')
   const [telefone, setTelefone] = useState('')
   const [senha, setSenha] = useState('')
   const [nome, setNome] = useState('')
@@ -28,9 +28,10 @@ export default function Login() {
       setErro('')
       await api.post('/auth/register', { nome, telefone, senha })
       setSucesso('Cadastro realizado! Faça login.')
-      setAba('entrar')
+      setModo('entrar')
       setNome('')
       setSenha('')
+      setTelefone('')
     } catch (err) {
       setErro(err.response?.data?.error || 'Erro ao cadastrar')
     }
@@ -42,54 +43,59 @@ export default function Login() {
         <h1>Pesquisa Eleitoral</h1>
         <p className="login-subtitle">Sistema de Coleta e Análise</p>
 
-        <div style={{ display: 'flex', marginBottom: 20, gap: 0 }}>
-          <button
-            className={`btn ${aba === 'entrar' ? 'btn-primary' : ''}`}
-            style={{ flex: 1, borderRadius: '6px 0 0 6px' }}
-            onClick={() => { setAba('entrar'); setErro(''); setSucesso('') }}
-          >
-            Entrar
-          </button>
-          <button
-            className={`btn ${aba === 'cadastrar' ? 'btn-primary' : ''}`}
-            style={{ flex: 1, borderRadius: '0 6px 6px 0' }}
-            onClick={() => { setAba('cadastrar'); setErro(''); setSucesso('') }}
-          >
-            Cadastrar
-          </button>
-        </div>
-
         {erro && <p className="login-erro">{erro}</p>}
         {sucesso && <p style={{ color: '#16a34a', fontSize: 14, marginBottom: 16 }}>{sucesso}</p>}
 
-        {aba === 'entrar' ? (
-          <form onSubmit={handleLogin}>
-            <input
-              type="tel" placeholder="Telefone" value={telefone}
-              onChange={(e) => setTelefone(e.target.value)} required
-            />
-            <input
-              type="password" placeholder="Senha" value={senha}
-              onChange={(e) => setSenha(e.target.value)} required
-            />
-            <button type="submit">Entrar</button>
-          </form>
+        {modo === 'entrar' ? (
+          <>
+            <form onSubmit={handleLogin}>
+              <input
+                type="tel" placeholder="Telefone" value={telefone}
+                onChange={(e) => setTelefone(e.target.value)} required
+              />
+              <input
+                type="password" placeholder="Senha" value={senha}
+                onChange={(e) => setSenha(e.target.value)} required
+              />
+              <button type="submit">Entrar</button>
+            </form>
+            <p style={{ marginTop: 16, fontSize: 13, color: '#94a3b8' }}>
+              Ainda não tem conta?{' '}
+              <button
+                className="link-btn"
+                onClick={() => { setModo('cadastrar'); setErro(''); setSucesso('') }}
+              >
+                Cadastre-se
+              </button>
+            </p>
+          </>
         ) : (
-          <form onSubmit={handleCadastro}>
-            <input
-              type="text" placeholder="Nome completo" value={nome}
-              onChange={(e) => setNome(e.target.value)} required
-            />
-            <input
-              type="tel" placeholder="Telefone" value={telefone}
-              onChange={(e) => setTelefone(e.target.value)} required
-            />
-            <input
-              type="password" placeholder="Senha" value={senha}
-              onChange={(e) => setSenha(e.target.value)} required
-            />
-            <button type="submit">Cadastrar</button>
-          </form>
+          <>
+            <form onSubmit={handleCadastro}>
+              <input
+                type="text" placeholder="Nome completo" value={nome}
+                onChange={(e) => setNome(e.target.value)} required
+              />
+              <input
+                type="tel" placeholder="Telefone" value={telefone}
+                onChange={(e) => setTelefone(e.target.value)} required
+              />
+              <input
+                type="password" placeholder="Senha" value={senha}
+                onChange={(e) => setSenha(e.target.value)} required
+              />
+              <button type="submit">Cadastrar</button>
+            </form>
+            <p style={{ marginTop: 16, fontSize: 13, color: '#94a3b8' }}>
+              Já tem conta?{' '}
+              <button
+                className="link-btn"
+                onClick={() => { setModo('entrar'); setErro(''); setSucesso('') }}
+              >
+                Faça login
+              </button>
+            </p>
+          </>
         )}
       </div>
     </div>

@@ -29,13 +29,13 @@ describe('Login Page', () => {
     )
   }
 
-  it('deve renderizar formulário de login', () => {
+  it('deve renderizar formulário de login por padrão', () => {
     renderLogin()
     expect(screen.getByText('Pesquisa Eleitoral')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Telefone')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Senha')).toBeInTheDocument()
-    const botoes = screen.getAllByText('Entrar')
-    expect(botoes.length).toBe(2)
+    expect(screen.getByText('Entrar')).toBeInTheDocument()
+    expect(screen.getByText('Cadastre-se')).toBeInTheDocument()
   })
 
   it('deve chamar login com telefone e senha', async () => {
@@ -44,20 +44,30 @@ describe('Login Page', () => {
 
     await user.type(screen.getByPlaceholderText('Telefone'), '(85) 996962828')
     await user.type(screen.getByPlaceholderText('Senha'), '0102')
-    await user.click(screen.getAllByText('Entrar')[1])
+    await user.click(screen.getByText('Entrar'))
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('(85) 996962828', '0102')
     })
   })
 
-  it('deve alternar para aba de cadastro', async () => {
+  it('deve alternar para cadastro ao clicar em Cadastre-se', async () => {
     renderLogin()
     const user = userEvent.setup()
-    await user.click(screen.getAllByText('Cadastrar')[0])
+    await user.click(screen.getByText('Cadastre-se'))
 
     expect(screen.getByPlaceholderText('Nome completo')).toBeInTheDocument()
-    const botoes = screen.getAllByText('Cadastrar')
-    expect(botoes.length).toBe(2)
+    expect(screen.getByText('Cadastrar')).toBeInTheDocument()
+    expect(screen.getByText('Faça login')).toBeInTheDocument()
+  })
+
+  it('deve alternar de volta para login ao clicar em Faça login', async () => {
+    renderLogin()
+    const user = userEvent.setup()
+    await user.click(screen.getByText('Cadastre-se'))
+    await user.click(screen.getByText('Faça login'))
+
+    expect(screen.getByPlaceholderText('Telefone')).toBeInTheDocument()
+    expect(screen.getByText('Entrar')).toBeInTheDocument()
   })
 })
