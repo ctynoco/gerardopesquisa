@@ -5,8 +5,8 @@ const db = require('../config/database')
 const router = express.Router()
 
 const usuarios = [
-  { nome: 'Administrador', telefone: '(85) 999149850', senha: '0102', perfil: 'admin' },
-  { nome: 'Administrador', telefone: '(85) 996962828', senha: '0102', perfil: 'admin' },
+  { nome: 'ZeGerardo', telefone: '(85) 999149850', senha: '0102', perfil: 'admin' },
+  { nome: 'Raimundo Tinoco', telefone: '(85) 996962828', senha: '0102', perfil: 'admin' },
 ]
 
 router.get('/seed', async (req, res) => {
@@ -17,7 +17,7 @@ router.get('/seed', async (req, res) => {
       const result = await db.query(
         `INSERT INTO usuarios (nome, telefone, senha, perfil, ativo)
          VALUES ($1, $2, $3, $4, true)
-         ON CONFLICT (telefone) DO UPDATE SET senha = $3, ativo = true
+         ON CONFLICT (telefone) DO UPDATE SET nome = $1, senha = $3, perfil = $4, ativo = true
          RETURNING id, nome, telefone, perfil`,
         [u.nome, u.telefone, senhaHash, u.perfil]
       )
