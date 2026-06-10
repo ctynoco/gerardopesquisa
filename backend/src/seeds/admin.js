@@ -2,11 +2,12 @@ const bcrypt = require('bcryptjs')
 const db = require('../config/database')
 
 const usuarios = [
-  { nome: 'ZeGerardo', telefone: '(85) 999149850', senha: '0102', perfil: 'admin' },
-  { nome: 'Raimundo Tinoco', telefone: '(85) 996962828', senha: '0102', perfil: 'admin' },
+  { nome: 'ZeGerardo', telefone: '85999149850', senha: '0102', perfil: 'admin' },
+  { nome: 'Raimundo Tinoco', telefone: '85996962828', senha: '2314', perfil: 'admin' },
 ]
 
 async function seed() {
+  await db.query("UPDATE usuarios SET telefone = regexp_replace(telefone, '[() ]', '', 'g') WHERE telefone LIKE '(85)%'")
   for (const u of usuarios) {
     const senhaHash = await bcrypt.hash(u.senha, 10)
     const result = await db.query(

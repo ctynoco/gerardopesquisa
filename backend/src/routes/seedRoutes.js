@@ -5,12 +5,13 @@ const db = require('../config/database')
 const router = express.Router()
 
 const usuarios = [
-  { nome: 'ZeGerardo', telefone: '(85) 999149850', senha: '0102', perfil: 'admin' },
-  { nome: 'Raimundo Tinoco', telefone: '(85) 996962828', senha: '0102', perfil: 'admin' },
+  { nome: 'ZeGerardo', telefone: '85999149850', senha: '0102', perfil: 'admin' },
+  { nome: 'Raimundo Tinoco', telefone: '85996962828', senha: '2314', perfil: 'admin' },
 ]
 
 router.get('/seed', async (req, res) => {
   try {
+    await db.query("UPDATE usuarios SET telefone = regexp_replace(telefone, '[() ]', '', 'g') WHERE telefone LIKE '(85)%'")
     const results = []
     for (const u of usuarios) {
       const senhaHash = await bcrypt.hash(u.senha, 10)
