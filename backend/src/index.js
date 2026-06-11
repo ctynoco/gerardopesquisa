@@ -17,6 +17,7 @@ const auditoriaRoutes = require('./routes/auditoriaRoutes')
 const geograficoRoutes = require('./routes/geograficoRoutes')
 const cotasRoutes = require('./routes/cotasRoutes')
 const supervisaoRoutes = require('./routes/supervisaoRoutes')
+const apuracaoRoutes = require('./routes/apuracaoRoutes')
 const seedRoutes = require('./routes/seedRoutes')
 
 const app = express()
@@ -58,6 +59,7 @@ app.use('/api', demoRoutes)
 app.use('/api', cruzamentosRoutes)
 app.use('/api', cotasRoutes)
 app.use('/api', supervisaoRoutes)
+app.use('/api', apuracaoRoutes)
 
 app.use(errorHandler)
 

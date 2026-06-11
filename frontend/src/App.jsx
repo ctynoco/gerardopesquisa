@@ -30,6 +30,7 @@ import Cruzamentos from './pages/Cruzamentos'
 import Relatorios from './pages/Relatorios'
 import Georreferenciamento from './pages/Georreferenciamento'
 import Supervisao from './pages/Supervisao'
+import Apuracao from './pages/Apuracao'
 import Cotas from './pages/Cotas'
 import Admin from './pages/Admin'
 
@@ -43,6 +44,7 @@ const icons = {
   Cruzamentos: <MergeTypeIcon />,
   Cotas: <TrackChangesIcon />,
   Supervisão: <VisibilityIcon />,
+  Apuração: <PollIcon />,
   Mapa: <MapIcon />,
   Relatórios: <BarChartIcon />,
   Admin: <AdminPanelSettingsIcon />,
@@ -165,6 +167,7 @@ function AdminLayout() {
       { to: '/cruzamentos', label: 'Cruzamentos', element: <Cruzamentos /> },
       { to: '/cotas', label: 'Cotas', element: <Cotas /> },
       { to: '/supervisao', label: 'Supervisão', element: <Supervisao /> },
+      { to: '/apuracao', label: 'Apuração', element: <Apuracao /> },
       { to: '/georreferenciamento', label: 'Mapa', element: <Georreferenciamento /> },
       { to: '/relatorios', label: 'Relatórios', element: <Relatorios /> },
       { to: '/admin', label: 'Admin', element: <Admin /> },
