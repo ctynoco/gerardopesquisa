@@ -14,7 +14,7 @@ import BarChartIcon from '@mui/icons-material/BarChart'
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule'
 import PieChartIcon from '@mui/icons-material/PieChart'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend, ArcElement)
 
 const cores = ['#1d4ed8', '#dc2626', '#16a34a', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
 const TIPOS_GRAFICO = ['vertical', 'horizontal', 'pizza']
