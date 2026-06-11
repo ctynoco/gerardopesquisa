@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
-import { Box, Typography, Button, TextField, FormControl, InputLabel, Select, MenuItem, LinearProgress, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
+import { useState, useEffect, useRef } from 'react'
+import { Box, Typography, Button, TextField, FormControl, InputLabel, Select, MenuItem, LinearProgress, Paper, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip } from '@mui/material'
 import HowToVoteIcon from '@mui/icons-material/HowToVote'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import VolumeUpIcon from '@mui/icons-material/VolumeUp'
+import MicIcon from '@mui/icons-material/Mic'
+import TimerIcon from '@mui/icons-material/Timer'
 import api from '../services/api'
 
 const PERFIL = [
@@ -20,6 +23,7 @@ const STORAGE_KEY = 'rascunho_coleta'
 export default function Coleta() {
   const [pesquisas, setPesquisas] = useState([])
   const [pesquisaId, setPesquisaId] = useState('')
+  const [pesquisaTitulo, setPesquisaTitulo] = useState('')
   const [perguntas, setPerguntas] = useState([])
   const [respostas, setRespostas] = useState({})
   const [perfil, setPerfil] = useState({})
@@ -32,43 +36,72 @@ export default function Coleta() {
   const [salvando, setSalvando] = useState(false)
   const [resumeModal, setResumeModal] = useState(false)
   const [erro, setErro] = useState('')
+  const [tempoSeg, setTempoSeg] = useState(0)
+  const [ouvindo, setOuvindo] = useState(false)
+  const [autoAvancando, setAutoAvancando] = useState(false)
 
-  useEffect(() => { api.get('/pesquisas?limit=100').then((r) => setPesquisas(r.data.pesquisas)) }, [])
+  const timerRef = useRef(null)
+  const autoAdvanceRef = useRef(null)
+  const recognitionRef = useRef(null)
+
+  const now = new Date()
+  const dataStr = now.toLocaleDateString('pt-BR')
+  const horaStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+  const online = navigator.onLine
+
+  useEffect(() => {
+    api.get('/pesquisas?limit=100').then((r) => setPesquisas(r.data.pesquisas))
+  }, [])
 
   useEffect(() => {
     const rascunho = localStorage.getItem(STORAGE_KEY)
     if (rascunho) setResumeModal(true)
   }, [])
 
-  const now = new Date()
-  const dataStr = now.toLocaleDateString('pt-BR')
-  const horaStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  useEffect(() => {
+    if (etapa === 2 && perguntas.length > 0) {
+      setTempoSeg(0)
+      timerRef.current = setInterval(() => setTempoSeg((t) => t + 1), 1000)
+      return () => clearInterval(timerRef.current)
+    }
+    setTempoSeg(0)
+  }, [etapa, qAtual])
+
+  useEffect(() => {
+    return () => { if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current) }
+  }, [])
 
   function salvarRascunho() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      pesquisaId, perfil, respostas, entrevistadoId, qAtual, etapa, pAtual, observacoes,
-      data: new Date().toISOString(),
-    }))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        pesquisaId, pesquisaTitulo, perfil, respostas, entrevistadoId, qAtual, etapa, pAtual, observacoes,
+        data: new Date().toISOString(),
+      }))
+    } catch {}
   }
 
   function continuarRascunho() {
-    const r = JSON.parse(localStorage.getItem(STORAGE_KEY))
-    if (r) {
-      setPesquisaId(r.pesquisaId)
-      setPerfil(r.perfil || {})
-      setRespostas(r.respostas || {})
-      setEntrevistadoId(r.entrevistadoId)
-      setQAtual(r.qAtual || 0)
-      setEtapa(r.etapa || 0)
-      setPAtual(r.pAtual || 0)
-      setObservacoes(r.observacoes || '')
-      if (r.pesquisaId) {
-        api.get(`/perguntas?pesquisa_id=${r.pesquisaId}`).then((res) => {
-          const lista = res.data?.perguntas || res.data || []
-          setPerguntas(Array.isArray(lista) ? lista : [])
-        }).catch(() => setPerguntas([]))
+    try {
+      const r = JSON.parse(localStorage.getItem(STORAGE_KEY))
+      if (r) {
+        setPesquisaId(r.pesquisaId)
+        setPesquisaTitulo(r.pesquisaTitulo || '')
+        setPerfil(r.perfil || {})
+        setRespostas(r.respostas || {})
+        setEntrevistadoId(r.entrevistadoId)
+        setQAtual(r.qAtual || 0)
+        setEtapa(r.etapa || 0)
+        setPAtual(r.pAtual || 0)
+        setObservacoes(r.observacoes || '')
+        if (r.pesquisaId) {
+          api.get(`/perguntas?pesquisa_id=${r.pesquisaId}`).then((res) => {
+            const lista = res.data?.perguntas || res.data || []
+            setPerguntas(Array.isArray(lista) ? lista : [])
+          }).catch(() => setPerguntas([]))
+        }
       }
-    }
+    } catch {}
     setResumeModal(false)
   }
 
@@ -78,6 +111,7 @@ export default function Coleta() {
   }
 
   function iniciar() {
+    setPesquisaTitulo(pesquisas.find((p) => String(p.id) === String(pesquisaId))?.titulo || '')
     api.get(`/perguntas?pesquisa_id=${pesquisaId}`).then((r) => {
       const lista = r.data?.perguntas || r.data || []
       setPerguntas(Array.isArray(lista) ? lista : [])
@@ -96,29 +130,56 @@ export default function Coleta() {
     salvarRascunho()
   }
 
-  async function salvarResposta(perguntaId, valor) {
+  async function salvarRespostaApi(perguntaId, valor) {
     if (!entrevistadoId) return
-    await api.post('/respostas', {
+    const payload = {
       pesquisa_id: Number(pesquisaId), pergunta_id: Number(perguntaId),
       entrevistado_id: Number(entrevistadoId), resposta: { valor },
-    }).catch(() => {})
+      tempo_seg: tempoSeg,
+    }
+    if (!online) {
+      try {
+        const fila = JSON.parse(localStorage.getItem('fila_offline') || '[]')
+        fila.push({ url: '/respostas', method: 'POST', body: payload })
+        localStorage.setItem('fila_offline', JSON.stringify(fila))
+      } catch {}
+      return
+    }
+    await api.post('/respostas', payload).catch(() => {})
   }
 
   function resetar() {
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem('fila_offline')
     setEtapa(0); setPesquisaId(''); setPerguntas([]); setRespostas({}); setPerfil({})
     setQAtual(0); setPAtual(0); setEntrevistadoId(null); setObservacoes(''); setConcluido(false); setErro('')
+    setTempoSeg(0)
   }
 
   async function salvarTudo() {
     setSalvando(true)
     setErro('')
     for (const [pid, valor] of Object.entries(respostas)) {
-      await salvarResposta(pid, valor)
+      if (!online) {
+        const fila = JSON.parse(localStorage.getItem('fila_offline') || '[]')
+        fila.push({
+          url: '/respostas', method: 'POST',
+          body: { pesquisa_id: Number(pesquisaId), pergunta_id: Number(pid), entrevistado_id: Number(entrevistadoId), resposta: { valor } },
+        })
+        localStorage.setItem('fila_offline', JSON.stringify(fila))
+      } else {
+        await salvarRespostaApi(pid, valor)
+      }
     }
-    setSalvando(false)
-    setConcluido(true)
-    localStorage.removeItem(STORAGE_KEY)
+    if (online) {
+      setSalvando(false)
+      setConcluido(true)
+      localStorage.removeItem(STORAGE_KEY)
+    } else {
+      setSalvando(false)
+      setConcluido(true)
+      localStorage.removeItem(STORAGE_KEY)
+    }
   }
 
   function selecionar(valor) {
@@ -127,21 +188,69 @@ export default function Coleta() {
     setRespostas((prev) => ({ ...prev, [p.id]: valor }))
     setErro('')
     salvarRascunho()
+    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current)
+    setAutoAvancando(true)
+    autoAdvanceRef.current = setTimeout(() => {
+      setAutoAvancando(false)
+      proxima()
+    }, 700)
   }
 
   function proxima() {
+    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current)
+    setAutoAvancando(false)
     const p = perguntas[qAtual]
     if (!p) return
-    if (!respostas[p.id]) { setErro('Selecione uma resposta.'); return }
-    salvarResposta(p.id, respostas[p.id])
+    if (!respostas[p.id] && p.tipo !== 'aberta') { setErro('Selecione uma resposta.'); return }
+    salvarRespostaApi(p.id, respostas[p.id])
     if (qAtual < perguntas.length - 1) setQAtual((q) => q + 1)
     setErro('')
     salvarRascunho()
   }
 
   function anterior() {
+    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current)
+    setAutoAvancando(false)
     setErro('')
     if (qAtual > 0) setQAtual((q) => q - 1)
+  }
+
+  function lerEmVozAlta(texto) {
+    if (!window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const utt = new SpeechSynthesisUtterance(texto)
+    utt.lang = 'pt-BR'
+    utt.rate = 0.9
+    window.speechSynthesis.speak(utt)
+  }
+
+  function iniciarVoz() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const rec = new SpeechRecognition()
+    rec.lang = 'pt-BR'
+    rec.continuous = false
+    rec.interimResults = false
+    recognitionRef.current = rec
+    setOuvindo(true)
+
+    rec.onresult = (event) => {
+      const transcript = event.results[0][0].transcript.trim().toLowerCase()
+      setOuvindo(false)
+      const p = perguntas[qAtual]
+      if (!p || !p.opcoes) return
+      const match = p.opcoes.find((o) => o.toLowerCase().includes(transcript) || transcript.includes(o.toLowerCase()))
+      if (match) selecionar(match)
+    }
+    rec.onerror = () => setOuvindo(false)
+    rec.onend = () => setOuvindo(false)
+    rec.start()
+  }
+
+  function formatTempo(s) {
+    const min = Math.floor(s / 60)
+    const seg = s % 60
+    return `${min}:${String(seg).padStart(2, '0')}`
   }
 
   const perfilOk = PERFIL.every((c) => perfil[c.id]?.toString().trim())
@@ -149,7 +258,6 @@ export default function Coleta() {
   const currentStep = etapa === 1 ? pAtual : etapa === 2 && perguntas.length > 0 ? PERFIL.length + qAtual : 0
   const progressPct = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
 
-  // Tela final
   if (etapa === 3) {
     return (
       <Box sx={{ maxWidth: 480, mx: 'auto', textAlign: 'center' }}>
@@ -173,7 +281,6 @@ export default function Coleta() {
     )
   }
 
-  // Etapa 2 — Perguntas
   if (etapa === 2) {
     if (perguntas.length === 0) {
       return (
@@ -219,7 +326,7 @@ export default function Coleta() {
     return (
       <Box sx={{ maxWidth: 520, mx: 'auto' }}>
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, backgroundColor: 'action.hover' }}>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'space-between' }}>
             <Typography variant="caption"><strong>Nº:</strong> {entrevistadoId}</Typography>
             <Typography variant="caption"><strong>Data:</strong> {dataStr}</Typography>
             <Typography variant="caption"><strong>Hora:</strong> {horaStr}</Typography>
@@ -232,14 +339,46 @@ export default function Coleta() {
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
               <Typography variant="caption" fontWeight={600}>{PERFIL.length + qAtual + 1}/{totalSteps}</Typography>
-              <Typography variant="caption" color="text.secondary">{Math.round(progressPct)}%</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  <TimerIcon sx={{ fontSize: 12, verticalAlign: 'middle', mr: 0.25 }} />
+                  {formatTempo(tempoSeg)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">{Math.round(progressPct)}%</Typography>
+              </Box>
             </Box>
             <LinearProgress variant="determinate" value={Math.min(progressPct, 100)} sx={{ height: 8, borderRadius: 4 }} />
           </Box>
         </Box>
 
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-          <Typography variant="body1" fontWeight={700} sx={{ mb: 2, fontSize: '1.1rem', lineHeight: 1.4 }}>{qAtual + 1}. {p.titulo}</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+            <Typography variant="body1" fontWeight={700} sx={{ fontSize: '1.1rem', lineHeight: 1.4, flex: 1 }}>
+              {qAtual + 1}. {p.titulo}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, ml: 1, flexShrink: 0 }}>
+              {'speechSynthesis' in window && (
+                <Tooltip title="Ouvir pergunta">
+                  <IconButton size="small" onClick={() => lerEmVozAlta(p.titulo)} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                    <VolumeUpIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) && p.opcoes && (
+                <Tooltip title="Responder por voz">
+                  <IconButton size="small" onClick={iniciarVoz} color={ouvindo ? 'error' : 'default'} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                    <MicIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+
+          {ouvindo && (
+            <Paper elevation={0} sx={{ p: 1, mb: 1.5, bgcolor: 'error.light', borderRadius: 1, textAlign: 'center' }}>
+              <Typography variant="caption" fontWeight={600} color="white">🎤 Ouvindo... fale sua resposta</Typography>
+            </Paper>
+          )}
 
           {erro && (
             <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1.5, fontWeight: 600 }}>
@@ -277,12 +416,24 @@ export default function Coleta() {
               sx={{ '& .MuiInputBase-root': { borderRadius: 2 } }} />
           )}
 
+          {autoAvancando && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">Avançando...</Typography>
+            </Box>
+          )}
+
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>Observações</Typography>
             <TextField value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Anotações..." multiline rows={2} size="small" fullWidth
               sx={{ '& .MuiInputBase-root': { borderRadius: 2, fontSize: '0.8rem' } }} />
           </Box>
         </Paper>
+
+        {!online && (
+          <Paper elevation={0} sx={{ p: 1, mb: 1.5, bgcolor: 'warning.light', borderRadius: 2, textAlign: 'center' }}>
+            <Typography variant="caption" fontWeight={600}>Modo offline — dados serão sincronizados quando houver internet</Typography>
+          </Paper>
+        )}
 
         {isLast && jaRespondeu ? (
           <Button variant="contained" color="success" size="large" startIcon={<CheckCircleIcon />} onClick={salvarTudo} disabled={salvando} fullWidth sx={{ borderRadius: 2, py: 1.5, fontSize: '1rem' }}>
@@ -304,7 +455,6 @@ export default function Coleta() {
     )
   }
 
-  // Etapa 1 — Perfil
   if (etapa === 1) {
     const campo = PERFIL[pAtual]
     if (!campo) { salvarPerfil(); return null }
@@ -334,8 +484,19 @@ export default function Coleta() {
         </Box>
 
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={600}>Perfil do Entrevistado</Typography>
-          <Typography variant="body1" fontWeight={700} sx={{ mb: 2, mt: 0.5, fontSize: '1.1rem' }}>{campo.label}</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>Perfil do Entrevistado</Typography>
+              <Typography variant="body1" fontWeight={700} sx={{ mt: 0.5, fontSize: '1.1rem' }}>{campo.label}</Typography>
+            </Box>
+            {'speechSynthesis' in window && (
+              <Tooltip title="Ouvir pergunta">
+                <IconButton size="small" onClick={() => lerEmVozAlta(campo.label)} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                  <VolumeUpIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
 
           {campo.type === 'select' ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -377,7 +538,6 @@ export default function Coleta() {
     )
   }
 
-  // Tela inicial
   return (
     <Box sx={{ maxWidth: 480, mx: 'auto' }}>
       <Typography variant="h1" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1, fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>

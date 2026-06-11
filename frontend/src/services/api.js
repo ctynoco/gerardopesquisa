@@ -22,4 +22,22 @@ api.interceptors.response.use(
   }
 )
 
+async function sincronizarFila() {
+  try {
+    const fila = JSON.parse(localStorage.getItem('fila_offline') || '[]')
+    if (!fila.length) return
+    const pendentes = []
+    for (const item of fila) {
+      try {
+        await api.post(item.url, item.body)
+      } catch { pendentes.push(item) }
+    }
+    localStorage.setItem('fila_offline', JSON.stringify(pendentes))
+  } catch {}
+}
+
+window.addEventListener('online', () => { sincronizarFila() })
+
+sincronizarFila()
+
 export default api
