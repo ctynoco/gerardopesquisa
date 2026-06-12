@@ -101,7 +101,7 @@ export default function Coleta() {
           }).catch(() => setPerguntas([]))
         }
       }
-    } catch {}
+    } catch (e) { console.error('Erro ao recuperar rascunho', e) }
     setResumeModal(false)
   }
 

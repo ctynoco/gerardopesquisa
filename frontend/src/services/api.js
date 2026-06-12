@@ -30,7 +30,7 @@ async function sincronizarFila() {
     for (const item of fila) {
       try {
         await api.post(item.url, item.body)
-      } catch { pendentes.push(item) }
+      } catch (e) { console.error('Erro ao sincronizar item offline', e); pendentes.push(item) }
     }
     localStorage.setItem('fila_offline', JSON.stringify(pendentes))
   } catch {}

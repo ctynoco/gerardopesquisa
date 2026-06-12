@@ -35,7 +35,7 @@ export default function Cruzamentos() {
 
   function buildChart(p, dim) {
     if (!p?.linhas?.length) return null
-    const labels = p.linhas.map((l) => l.valor.length > 20 ? l.valor.slice(0, 18) + '..' : l.valor)
+    const labels = p.linhas.map((l) => l.valor?.length > 20 ? l.valor.slice(0, 18) + '..' : (l.valor || ''))
     const grupos = [...new Set(p.linhas.flatMap((l) => Object.keys(l[dim] || {})))]
     if (!grupos.length) return null
     const datasets = grupos.map((g, i) => ({

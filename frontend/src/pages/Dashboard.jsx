@@ -30,7 +30,7 @@ export default function Dashboard() {
           entrevistados: er.data.total || 0,
           perguntas: pgr.data.perguntas?.length || 0,
         })
-      } catch {}
+      } catch (err) { console.error('Erro ao carregar dashboard', err) }
     }
     load()
   }, [])

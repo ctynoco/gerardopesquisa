@@ -59,7 +59,7 @@ const respostaSchema = z.object({
 const usuarioSchema = z.object({
   nome: z.string().min(2).max(255),
   telefone: z.string().min(8).max(20),
-  senha: z.string().min(4).max(100).optional(),
+  senha: z.string().min(4).max(100),
   perfil: z.enum(['admin', 'entrevistador']).optional(),
 })
 

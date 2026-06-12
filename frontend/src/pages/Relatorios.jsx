@@ -46,7 +46,7 @@ export default function Relatorios() {
   const perfil = estatisticas?.perfil || {}
 
   function getTipo(perguntaId) {
-    return graficoPrefs[perguntaId] || 'verticals'
+    return graficoPrefs[perguntaId] || 'vertical'
   }
 
   function setTipo(perguntaId, tipo) {
