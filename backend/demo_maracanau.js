@@ -53,33 +53,29 @@ async function main() {
   const pid = pesq.data.pesquisa.id
   console.log('Pesquisa ID:', pid)
 
-  console.log('\n=== CRIAR PERGUNTAS ===')
+   console.log('\n=== CRIAR PERGUNTAS ===')
   const perguntas = [
-    { tipo: 'unica_escolha', titulo: 'Qual sua idade?', opcoes: ['16 a 24 anos', '25 a 34 anos', '35 a 44 anos', '45 a 59 anos', '60 anos ou mais'], ordenacao: 1 },
-    { tipo: 'unica_escolha', titulo: 'Sexo', opcoes: ['Masculino', 'Feminino', 'Outro', 'Prefere não informar'], ordenacao: 2 },
-    { tipo: 'unica_escolha', titulo: 'Escolaridade', opcoes: ['Ensino Fundamental Incompleto', 'Ensino Fundamental Completo', 'Ensino Médio Incompleto', 'Ensino Médio Completo', 'Ensino Superior Incompleto', 'Ensino Superior Completo', 'Pós-graduação'], ordenacao: 3 },
-    { tipo: 'unica_escolha', titulo: 'Faixa de Renda Familiar', opcoes: ['Até 1 salário mínimo', 'De 1 a 2 salários mínimos', 'De 2 a 5 salários mínimos', 'De 5 a 10 salários mínimos', 'Acima de 10 salários mínimos', 'Não deseja informar'], ordenacao: 4 },
-    { tipo: 'unica_escolha', titulo: 'Costuma acompanhar política?', opcoes: ['Sim', 'Não'], ordenacao: 5 },
-    { tipo: 'unica_escolha', titulo: 'Participou da última eleição?', opcoes: ['Sim', 'Não'], ordenacao: 6 },
-    { tipo: 'unica_escolha', titulo: 'Como avalia a Administração Federal?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 7 },
-    { tipo: 'unica_escolha', titulo: 'Como avalia a Administração Estadual?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 8 },
-    { tipo: 'unica_escolha', titulo: 'Como avalia a Administração Municipal?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 9 },
-    { tipo: 'aberta', titulo: 'Se a eleição fosse hoje, em quem você votaria?', ordenacao: 10 },
-    { tipo: 'unica_escolha', titulo: 'Em qual destes candidatos você votaria?', opcoes: ['Julio Cesar', 'Lucinildo Frota', 'Raphael Pessoa', 'Roberto Pessoa', 'Dra. Silvana', 'Assis da Azevedo', 'Neton Lacerda', 'Firmo Camurça', 'Branco/Nulo', 'Não sabe / Não opinou'], ordenacao: 11 },
-    { tipo: 'aberta', titulo: 'Quem seria sua segunda opção de voto?', ordenacao: 12 },
-    { tipo: 'aberta', titulo: 'Você tem rejeição a algum candidato? Qual?', ordenacao: 13 },
-    { tipo: 'unica_escolha', titulo: 'Você ainda pode mudar seu voto até a eleição?', opcoes: ['Sim', 'Não'], ordenacao: 14 },
-    { tipo: 'aberta', titulo: 'Qual a principal qualidade que você deseja em um candidato?', ordenacao: 15 },
-    { tipo: 'aberta', titulo: 'Na sua opinião, quais são os principais problemas da cidade?', ordenacao: 16 },
-    { tipo: 'unica_escolha', titulo: 'Como você avalia a Saúde Pública do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 17 },
-    { tipo: 'unica_escolha', titulo: 'Como você avalia a Educação do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 18 },
-    { tipo: 'unica_escolha', titulo: 'Como você avalia a Segurança Pública do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 19 },
-    { tipo: 'unica_escolha', titulo: 'Como você avalia a Limpeza Urbana do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 20 },
-    { tipo: 'unica_escolha', titulo: 'Como você avalia a Mobilidade Urbana do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 21 },
-    { tipo: 'unica_escolha', titulo: 'Como você avalia a Transparência da Administração Municipal?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 22 },
-    { tipo: 'unica_escolha', titulo: 'Como você avalia as Obras Públicas realizadas no município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 23 },
-    { tipo: 'aberta', titulo: 'Qual o principal problema que o próximo prefeito deve resolver primeiro?', ordenacao: 24 },
-    { tipo: 'aberta', titulo: 'Gostaria de deixar alguma sugestão para melhorar a cidade?', ordenacao: 25 },
+    { tipo: 'unica_escolha', titulo: 'Costuma acompanhar política?', opcoes: ['Sim', 'Não'], ordenacao: 1 },
+    { tipo: 'unica_escolha', titulo: 'Participou da última eleição?', opcoes: ['Sim', 'Não'], ordenacao: 2 },
+    { tipo: 'unica_escolha', titulo: 'Como avalia a Administração Federal?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 3 },
+    { tipo: 'unica_escolha', titulo: 'Como avalia a Administração Estadual?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 4 },
+    { tipo: 'unica_escolha', titulo: 'Como avalia a Administração Municipal?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 5 },
+    { tipo: 'aberta', titulo: 'Se a eleição fosse hoje, em quem você votaria?', ordenacao: 6 },
+    { tipo: 'unica_escolha', titulo: 'Em qual destes candidatos você votaria?', opcoes: ['Julio Cesar', 'Lucinildo Frota', 'Raphael Pessoa', 'Roberto Pessoa', 'Dra. Silvana', 'Assis da Azevedo', 'Neton Lacerda', 'Firmo Camurça', 'Branco/Nulo', 'Não sabe / Não opinou'], ordenacao: 7 },
+    { tipo: 'aberta', titulo: 'Quem seria sua segunda opção de voto?', ordenacao: 8 },
+    { tipo: 'aberta', titulo: 'Você tem rejeição a algum candidato? Qual?', ordenacao: 9 },
+    { tipo: 'unica_escolha', titulo: 'Você ainda pode mudar seu voto até a eleição?', opcoes: ['Sim', 'Não'], ordenacao: 10 },
+    { tipo: 'aberta', titulo: 'Qual a principal qualidade que você deseja em um candidato?', ordenacao: 11 },
+    { tipo: 'aberta', titulo: 'Na sua opinião, quais são os principais problemas da cidade?', ordenacao: 12 },
+    { tipo: 'unica_escolha', titulo: 'Como você avalia a Saúde Pública do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 13 },
+    { tipo: 'unica_escolha', titulo: 'Como você avalia a Educação do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 14 },
+    { tipo: 'unica_escolha', titulo: 'Como você avalia a Segurança Pública do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 15 },
+    { tipo: 'unica_escolha', titulo: 'Como você avalia a Limpeza Urbana do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 16 },
+    { tipo: 'unica_escolha', titulo: 'Como você avalia a Mobilidade Urbana do município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 17 },
+    { tipo: 'unica_escolha', titulo: 'Como você avalia a Transparência da Administração Municipal?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 18 },
+    { tipo: 'unica_escolha', titulo: 'Como você avalia as Obras Públicas realizadas no município?', opcoes: ['Ótima', 'Boa', 'Regular', 'Ruim', 'Péssima', 'Não sabe / Não opinou'], ordenacao: 19 },
+    { tipo: 'aberta', titulo: 'Qual o principal problema que o próximo prefeito deve resolver primeiro?', ordenacao: 20 },
+    { tipo: 'aberta', titulo: 'Gostaria de deixar alguma sugestão para melhorar a cidade?', ordenacao: 21 },
   ]
 
   const pids = []
@@ -120,9 +116,19 @@ async function main() {
   const nomesF = ['Maria','Francisca','Ana','Raimunda','Antônia','Joana','Tereza','Luciana','Cristina','Marta','Sônia','Rita','Lúcia','Cláudia','Rosa','Sandra','Juliana','Patrícia','Fernanda','Camila','Amanda','Letícia','Jessica','Viviane','Bianca','Larissa','Mariana','Isabela','Nathalia','Aline','Vanessa','Priscila','Débora','Tamires','Carla','Elaine','Daniele','Simone','Alessandra','Tatiane']
   const sobrenomes = ['Silva','Santos','Oliveira','Souza','Lima','Pereira','Costa','Almeida','Nascimento','Ferreira','Araújo','Ribeiro','Carvalho','Gomes','Martins','Barbosa','Rodrigues','Alves','Melo','Barros','Vieira','Monteiro','Lopes','Dias','Cavalcante','Moreira','Bezerra','Castro','Correia','Mendes','Azevedo','Freitas','Cardoso','Maia','Sá','Xavier','Bastos','Muniz','Chaves','Reis']
 
+  const bairros = ['Centro','Conjunto Industrial','Jereissati I','Jereissati II','Pajuçara','Alto da Mangueira','Novo Maracanaú','Mucunã','Pirangi','Sapupara','Siqueira','Timbó','Vila São João','Boqueirão','São Miguel']
+
   const candidatos = ['Julio Cesar','Lucinildo Frota','Raphael Pessoa','Roberto Pessoa','Dra. Silvana','Assis da Azevedo','Neton Lacerda','Firmo Camurça','Branco/Nulo','Não sabe / Não opinou']
   const pesosVoto = [0.18, 0.12, 0.10, 0.15, 0.08, 0.06, 0.05, 0.04, 0.12, 0.10]
   function pickVoto() { const r = Math.random(); let acc = 0; for (let i = 0; i < candidatos.length; i++) { acc += pesosVoto[i]; if (r < acc) return candidatos[i] } return 'Não sabe / Não opinou' }
+
+  function pickVotoEspontaneo() {
+    const espontaneo = [...candidatos, 'Não sei', 'Prefiro não responder', 'Ninguém']
+    const pesos = [0.14, 0.09, 0.08, 0.12, 0.06, 0.04, 0.03, 0.02, 0.08, 0.10, 0.14, 0.05, 0.05]
+    const r = Math.random(); let acc = 0
+    for (let i = 0; i < espontaneo.length; i++) { acc += pesos[i]; if (r < acc) return espontaneo[i] }
+    return 'Não sei'
+  }
 
   function pickSegunda(v) { const o = candidatos.filter(c => c !== v && c !== 'Branco/Nulo' && c !== 'Não sabe / Não opinou'); const t = [...o, 'Branco/Nulo', 'Não sabe / Não opinou']; return t[Math.floor(Math.random()*t.length)] }
   function pickRejeicao(v) { if (Math.random() < 0.4) return 'Nenhum'; const o = candidatos.filter(c => c !== v && c !== 'Branco/Nulo' && c !== 'Não sabe / Não opinou'); return o[Math.floor(Math.random()*o.length)] }
@@ -132,6 +138,7 @@ async function main() {
   function avalEstadual() { const r = Math.random(); if (r<0.04) return 'Ótima'; if (r<0.15) return 'Boa'; if (r<0.40) return 'Regular'; if (r<0.60) return 'Ruim'; return 'Péssima' }
   function saude() { const r = Math.random(); if (r<0.01) return 'Ótima'; if (r<0.05) return 'Boa'; if (r<0.20) return 'Regular'; if (r<0.45) return 'Ruim'; return 'Péssima' }
   function educacao() { const r = Math.random(); if (r<0.03) return 'Ótima'; if (r<0.15) return 'Boa'; if (r<0.45) return 'Regular'; if (r<0.65) return 'Ruim'; return 'Péssima' }
+  function seguranca() { const r = Math.random(); if (r<0.01) return 'Ótima'; if (r<0.04) return 'Boa'; if (r<0.15) return 'Regular'; if (r<0.45) return 'Ruim'; return 'Péssima' }
   function limpeza() { const r = Math.random(); if (r<0.01) return 'Ótima'; if (r<0.05) return 'Boa'; if (r<0.15) return 'Regular'; if (r<0.40) return 'Ruim'; return 'Péssima' }
   function mobilidade() { const r = Math.random(); if (r<0.02) return 'Ótima'; if (r<0.08) return 'Boa'; if (r<0.25) return 'Regular'; if (r<0.55) return 'Ruim'; return 'Péssima' }
   function transparencia() { const r = Math.random(); if (r<0.01) return 'Ótima'; if (r<0.08) return 'Boa'; if (r<0.30) return 'Regular'; if (r<0.55) return 'Ruim'; return 'Péssima' }
@@ -148,30 +155,31 @@ async function main() {
     const genero = pick(generos)
     const escolaridade = pick(escolaridades)
     const renda = pick(rendas)
+    const bairro = bairros[i % bairros.length]
     const nomeBase = (genero === 'Feminino' || genero === 'Outro') ? nomesF : nomesM
     const nome = nomeBase[i % nomeBase.length] + ' ' + sobrenomes[i % sobrenomes.length] + ' ' + sobrenomes[(i + 3) % sobrenomes.length]
     const idadeNum = idade === '16 a 24 anos' ? Math.floor(Math.random()*9+16) : idade === '25 a 34 anos' ? Math.floor(Math.random()*10+25) : idade === '35 a 44 anos' ? Math.floor(Math.random()*10+35) : idade === '45 a 59 anos' ? Math.floor(Math.random()*15+45) : Math.floor(Math.random()*20+60)
     const voto = pickVoto()
+    const votoEsp = pickVotoEspontaneo()
 
     const er = await req('POST', '/entrevistados', {
       pesquisa_id: pid, nome, idade: idadeNum, genero, cidade: 'Maracanaú', estado: 'CE',
-      escolaridade, renda_familiar: renda, consentimento_lgpd: true
+      bairro, escolaridade, renda_familiar: renda, consentimento_lgpd: true
     }, token)
     if (er.status !== 201) { console.log('  FAIL entrevistado', i, er.data); continue }
     const eid = er.data.entrevistado.id
 
     const respostas = [
-      [pids[0], idade], [pids[1], genero], [pids[2], escolaridade], [pids[3], renda],
-      [pids[4], Math.random()<0.55?'Sim':'Não'], [pids[5], Math.random()<0.72?'Sim':'Não'],
-      [pids[6], avalFederal()], [pids[7], avalEstadual()], [pids[8], avalMunicipal()],
-      [pids[9], voto], [pids[10], voto],
-      [pids[11], pickSegunda(voto)], [pids[12], pickRejeicao(voto)],
-      [pids[13], Math.random()<0.38?'Sim':'Não'], [pids[14], abrir(qualidades)],
-      [pids[15], abrir(problemas)],
-      [pids[16], saude()], [pids[17], educacao()], [pids[18], avalMunicipal()],
-      [pids[19], limpeza()], [pids[20], mobilidade()],
-      [pids[21], transparencia()], [pids[22], obras()],
-      [pids[23], abrir(sugestoes)], [pids[24], abrir(sugestoes)],
+      [pids[0], Math.random()<0.55?'Sim':'Não'], [pids[1], Math.random()<0.72?'Sim':'Não'],
+      [pids[2], avalFederal()], [pids[3], avalEstadual()], [pids[4], avalMunicipal()],
+      [pids[5], votoEsp], [pids[6], voto],
+      [pids[7], pickSegunda(voto)], [pids[8], pickRejeicao(voto)],
+      [pids[9], Math.random()<0.38?'Sim':'Não'], [pids[10], abrir(qualidades)],
+      [pids[11], abrir(problemas)],
+      [pids[12], saude()], [pids[13], educacao()], [pids[14], seguranca()],
+      [pids[15], limpeza()], [pids[16], mobilidade()],
+      [pids[17], transparencia()], [pids[18], obras()],
+      [pids[19], abrir(sugestoes)], [pids[20], abrir(sugestoes)],
     ]
     for (const [pp, resposta] of respostas) {
       await req('POST', '/respostas', { pesquisa_id: pid, pergunta_id: pp, entrevistado_id: eid, resposta }, token)
