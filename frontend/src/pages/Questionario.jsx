@@ -11,6 +11,7 @@ import PrintIcon from '@mui/icons-material/Print'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import modelos from '../data/modelosPerguntas'
 import api from '../services/api'
+import { questionarioSchema, perguntaSchema, validate } from '../validations/schemas'
 
 const tipos = [
   { value: 'unica_escolha', label: '01. Única Escolha' },
@@ -121,12 +122,14 @@ export default function Questionario() {
 
   async function adicionar(pp) {
     const p = pp || editando
-    if (!p.titulo.trim()) return
+    const v = validate(perguntaSchema, p)
+    if (!v.valid) { setErro(v.errors.map((e) => e.message).join(', ')); return }
     const nova = { titulo: p.titulo, tipo: p.tipo }
     if (p.opcoes?.length) nova.opcoes = p.opcoes
     else if (typeof p.opcoes === 'string' && p.opcoes.trim()) nova.opcoes = p.opcoes.split(',').map((s) => s.trim())
     setPerguntas((prev) => [...prev, { ...nova, _salva: false, _id: null }])
     if (!pp) setEditando({ titulo: '', tipo: 'unica_escolha', opcoes: '' })
+    setErro('')
   }
 
   function remover(idx) {
@@ -163,7 +166,8 @@ export default function Questionario() {
   }
 
   async function salvarQuestionario() {
-    if (!nome.trim()) { setErro('Informe o nome do questionário'); return }
+    const v = validate(questionarioSchema, { nome, municipio, data, amostra })
+    if (!v.valid) { setErro(v.errors.map((e) => e.message).join(', ')); return }
     let pid = pesquisaId
     try {
       if (!pid) {
