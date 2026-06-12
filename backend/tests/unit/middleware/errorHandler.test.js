@@ -53,7 +53,7 @@ describe('errorHandler', () => {
     errorHandler(err, req, res, next)
 
     expect(res.status).toHaveBeenCalledWith(500)
-    expect(res.json).toHaveBeenCalledWith({ error: 'Erro interno do servidor' })
+    expect(res.json).toHaveBeenCalledWith({ error: 'Algo deu errado' })
   })
 
   it('deve usar status personalizado se fornecido', () => {

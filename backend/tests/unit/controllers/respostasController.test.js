@@ -77,22 +77,18 @@ describe('respostasController', () => {
       expect(res.json).toHaveBeenCalledWith({ resposta: expect.objectContaining({ resposta: { valor: 'Sim' } }) })
     })
 
-    it('deve retornar 400 se campos obrigatórios faltarem', async () => {
-      const testCases = [
-        { pesquisa_id: 1, pergunta_id: 1, entrevistado_id: 1 },
-        { pesquisa_id: 1, pergunta_id: 1, resposta: { valor: 'x' } },
-        { pesquisa_id: 1, entrevistado_id: 1, resposta: { valor: 'x' } },
-        { pergunta_id: 1, entrevistado_id: 1, resposta: { valor: 'x' } },
-      ]
+    it('deve lidar com erro do banco', async () => {
+      const req = mockReq({}, {}, {
+        pesquisa_id: 1, pergunta_id: 1, entrevistado_id: 1, resposta: { valor: 'Sim' },
+      })
+      const res = mockRes()
+      const next = jest.fn()
 
-      for (const body of testCases) {
-        const req = mockReq({}, {}, body)
-        const res = mockRes()
-        const next = jest.fn()
+      db.query.mockRejectedValueOnce(new Error('DB error'))
 
-        await criar(req, res, next)
-        expect(res.status).toHaveBeenCalledWith(400)
-      }
+      await criar(req, res, next)
+
+      expect(next).toHaveBeenCalledWith(expect.any(Error))
     })
   })
 
@@ -114,6 +110,7 @@ describe('respostasController', () => {
         .mockResolvedValueOnce({ rows: [{ id: 2, resposta: { valor: '25' } }] })
         .mockResolvedValueOnce({ rows: [{ media: '25.5', minimo: '18', maximo: '35' }] })
         .mockResolvedValueOnce({ rows: [{ count: '5' }] })
+        .mockResolvedValueOnce({ rows: [{ genero: null, idade: null, escolaridade: null, renda: null }] })
 
       await estatisticas(req, res, next)
 

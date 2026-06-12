@@ -18,6 +18,10 @@ import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
 import MergeTypeIcon from '@mui/icons-material/MergeType'
 import VisibilityIcon from '@mui/icons-material/Visibility'
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlined'
+import RoomIcon from '@mui/icons-material/Room'
+import MenuBookIcon from '@mui/icons-material/MenuBook'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Login from './pages/Login'
@@ -33,6 +37,10 @@ import Supervisao from './pages/Supervisao'
 import Apuracao from './pages/Apuracao'
 import Cotas from './pages/Cotas'
 import Admin from './pages/Admin'
+import Pesquisas from './pages/Pesquisas'
+import Perguntas from './pages/Perguntas'
+import Mapa from './pages/Mapa'
+import Biblioteca from './pages/Biblioteca'
 
 const DRAWER_W = 260
 
@@ -48,6 +56,10 @@ const icons = {
   Mapa: <MapIcon />,
   Relatórios: <BarChartIcon />,
   Admin: <AdminPanelSettingsIcon />,
+  Pesquisas: <FormatListBulletedIcon />,
+  Perguntas: <HelpOutlineIcon />,
+  'Mapa Detalhado': <RoomIcon />,
+  Biblioteca: <MenuBookIcon />,
 }
 
 function SidebarContent({ links, usuario, logout, onClose }) {
@@ -171,6 +183,10 @@ function AdminLayout() {
       { to: '/georreferenciamento', label: 'Mapa', element: <Georreferenciamento /> },
       { to: '/relatorios', label: 'Relatórios', element: <Relatorios /> },
       { to: '/admin', label: 'Admin', element: <Admin /> },
+      { to: '/pesquisas', label: 'Pesquisas', element: <Pesquisas /> },
+      { to: '/perguntas', label: 'Perguntas', element: <Perguntas /> },
+      { to: '/mapa', label: 'Mapa Detalhado', element: <Mapa /> },
+      { to: '/biblioteca', label: 'Biblioteca', element: <Biblioteca /> },
     ]} />
   )
 }

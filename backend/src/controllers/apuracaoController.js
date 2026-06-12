@@ -4,7 +4,7 @@ async function apuracao(req, res, next) {
   try {
     const { pesquisa_id } = req.params
     const perguntas = await db.query(
-      `SELECT id, titulo, tipo FROM perguntas WHERE pesquisa_id = $1 AND ativa = true ORDER BY ordem`, [pesquisa_id]
+      `SELECT id, titulo, tipo FROM perguntas WHERE pesquisa_id = $1 ORDER BY ordenacao`, [pesquisa_id]
     )
     const results = await Promise.all(perguntas.rows.map(async (p) => {
       const respostas = await db.query(
@@ -39,7 +39,7 @@ async function evolucao(req, res, next) {
     const intervalo = periodo === 'day' ? 'day' : 'hour'
 
     const perguntas = await db.query(
-      `SELECT id, titulo FROM perguntas WHERE pesquisa_id = $1 AND ativa = true ORDER BY ordem`, [pesquisa_id]
+      `SELECT id, titulo FROM perguntas WHERE pesquisa_id = $1 ORDER BY ordenacao`, [pesquisa_id]
     )
 
     const results = await Promise.all(perguntas.rows.map(async (p) => {

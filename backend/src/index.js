@@ -1,11 +1,11 @@
 require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
+const rateLimit = require('express-rate-limit')
 const { auditLog } = require('./middleware/audit')
 const errorHandler = require('./middleware/errorHandler')
 const runMigrations = require('./config/run-migrations')
 const authRoutes = require('./routes/authRoutes')
-const demoRoutes = require('./routes/demoRoutes')
 const pesquisasRoutes = require('./routes/pesquisasRoutes')
 const perguntasRoutes = require('./routes/perguntasRoutes')
 const entrevistadosRoutes = require('./routes/entrevistadosRoutes')
@@ -18,7 +18,6 @@ const geograficoRoutes = require('./routes/geograficoRoutes')
 const cotasRoutes = require('./routes/cotasRoutes')
 const supervisaoRoutes = require('./routes/supervisaoRoutes')
 const apuracaoRoutes = require('./routes/apuracaoRoutes')
-const seedRoutes = require('./routes/seedRoutes')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -33,12 +32,30 @@ const corsOrigins = [
   'https://pesquisa-eleitoral.vercel.app',
 ]
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { error: 'Muitas requisições. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
 app.use(cors({
   origin: corsOrigins.length ? corsOrigins : '*',
   credentials: true,
 }))
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '1mb' }))
+app.use(express.urlencoded({ extended: true, limit: '1mb' }))
+app.use('/api/', limiter)
+app.use('/api/auth', authLimiter)
 app.use(auditLog)
 
 app.get('/api/health', (req, res) => {
@@ -54,8 +71,6 @@ app.use('/api/exportacao', exportacaoRoutes)
 app.use('/api/usuarios', usuariosRoutes)
 app.use('/api/auditoria', auditoriaRoutes)
 app.use('/api/geografico', geograficoRoutes)
-app.use('/api', seedRoutes)
-app.use('/api', demoRoutes)
 app.use('/api', cruzamentosRoutes)
 app.use('/api', cotasRoutes)
 app.use('/api', supervisaoRoutes)

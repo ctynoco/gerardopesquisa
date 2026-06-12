@@ -51,12 +51,12 @@ export default function Coleta() {
   const online = navigator.onLine
 
   useEffect(() => {
-    api.get('/pesquisas?limit=100').then((r) => setPesquisas(r.data.pesquisas))
+    api.get('/pesquisas?limit=100').then((r) => setPesquisas(r.data.pesquisas)).catch((err) => console.error('Erro ao carregar pesquisas', err))
   }, [])
 
   useEffect(() => {
     const rascunho = localStorage.getItem(STORAGE_KEY)
-    if (rascunho) setResumeModal(true)
+    if (rascunho && !concluido) setResumeModal(true)
   }, [])
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function Coleta() {
         pesquisaId, pesquisaTitulo, perfil, respostas, entrevistadoId, qAtual, etapa, pAtual, observacoes,
         data: new Date().toISOString(),
       }))
-    } catch {}
+    } catch (e) { console.error('Erro ao salvar rascunho', e) }
   }
 
   function continuarRascunho() {
@@ -142,10 +142,10 @@ export default function Coleta() {
         const fila = JSON.parse(localStorage.getItem('fila_offline') || '[]')
         fila.push({ url: '/respostas', method: 'POST', body: payload })
         localStorage.setItem('fila_offline', JSON.stringify(fila))
-      } catch {}
+      } catch (e) { console.error('Erro ao salvar fila offline', e) }
       return
     }
-    await api.post('/respostas', payload).catch(() => {})
+    await api.post('/respostas', payload).catch((e) => console.error('Erro ao salvar resposta', e))
   }
 
   function resetar() {
@@ -193,7 +193,7 @@ export default function Coleta() {
     autoAdvanceRef.current = setTimeout(() => {
       setAutoAvancando(false)
       proxima()
-    }, 700)
+    }, 1200)
   }
 
   function proxima() {

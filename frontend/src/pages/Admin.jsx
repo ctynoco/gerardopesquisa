@@ -7,6 +7,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import BlockIcon from '@mui/icons-material/Block'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
+import ConfirmDialog from '../components/ConfirmDialog'
 import api from '../services/api'
 
 export default function Admin() {
@@ -16,15 +17,16 @@ export default function Admin() {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ nome: '', telefone: '', senha: '', perfil: 'entrevistador' })
   const [editando, setEditando] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   useEffect(() => { carregarUsuarios(); carregarAuditoria() }, [])
 
   async function carregarUsuarios() {
-    try { const r = await api.get('/usuarios'); setUsuarios(r.data.usuarios) } catch {}
+    try { const r = await api.get('/usuarios'); setUsuarios(r.data.usuarios) } catch (err) { console.error('Erro ao carregar usuários', err) }
   }
 
   async function carregarAuditoria() {
-    try { const r = await api.get('/auditoria'); setAuditoria(r.data.auditoria) } catch {}
+    try { const r = await api.get('/auditoria'); setAuditoria(r.data.auditoria) } catch (err) { console.error('Erro ao carregar auditoria', err) }
   }
 
   async function salvar(e) {
@@ -55,10 +57,11 @@ export default function Admin() {
     carregarUsuarios()
   }
 
-  async function remover(id) {
-    if (!window.confirm('Remover usuário?')) return
-    try { await api.delete(`/usuarios/${id}`); carregarUsuarios() } catch (err) { alert(err.response?.data?.error || 'Erro ao remover') }
+  async function remover() {
+    if (!confirmDelete) return
+    try { await api.delete(`/usuarios/${confirmDelete}`); setConfirmDelete(null); carregarUsuarios() } catch (err) { alert(err.response?.data?.error || 'Erro ao remover'); setConfirmDelete(null) }
   }
+
 
   const colUsuarios = [
     { field: 'nome', headerName: 'Nome', flex: 1 },
@@ -69,7 +72,7 @@ export default function Admin() {
       <Box sx={{ display: 'flex', gap: 0.5 }}>
         <Tooltip title="Editar"><IconButton size="small" onClick={() => editar(row)}><EditIcon fontSize="small" /></IconButton></Tooltip>
         <Tooltip title={row.ativo ? 'Desativar' : 'Ativar'}><IconButton size="small" onClick={() => alternarAtivo(row)}>{row.ativo ? <BlockIcon fontSize="small" color="warning" /> : <CheckCircleIcon fontSize="small" color="success" />}</IconButton></Tooltip>
-        <Tooltip title="Remover"><IconButton size="small" onClick={() => remover(row.id)}><DeleteIcon fontSize="small" color="error" /></IconButton></Tooltip>
+        <Tooltip title="Remover"><IconButton size="small" onClick={() => setConfirmDelete(row.id)}><DeleteIcon fontSize="small" color="error" /></IconButton></Tooltip>
       </Box>
     )},
   ]
@@ -128,6 +131,15 @@ export default function Admin() {
           <DataGrid rows={auditoria} columns={colAuditoria} pageSizeOptions={[10, 25, 50]} getRowId={(r) => r.id} autoHeight disableRowSelectionOnClick density="compact" localeText={ptBR.components.MuiDataGrid.defaultProps.localeText} sx={{ border: 0 }} />
         </Box>
       )}
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Remover usuário"
+        message="Tem certeza que deseja remover este usuário? Esta ação não pode ser desfeita."
+        onConfirm={remover}
+        onCancel={() => setConfirmDelete(null)}
+        confirmText="Remover"
+      />
     </Box>
   )
 }

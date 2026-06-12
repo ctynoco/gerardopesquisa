@@ -46,9 +46,9 @@ async function criar(req, res, next) {
     const idadeNum = idade != null && idade !== '' ? Number(idade) : null
     const estadoOk = estado ? String(estado).slice(0, 2) : null
     const result = await db.query(
-      `INSERT INTO entrevistados (pesquisa_id, nome, idade, genero, cidade, estado, bairro, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd, token_anonimizacao)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
-      [pesquisa_id, nome || null, idadeNum, genero || null, cidade || null, estadoOk, bairro || null, escolaridade || null, renda_familiar || null, ocupacao || null, zona_eleitoral || null, sessao_eleitoral || null, consentimento_lgpd || false, token]
+      `INSERT INTO entrevistados (pesquisa_id, nome, idade, genero, cidade, estado, bairro, escolaridade, renda_familiar, ocupacao, zona_eleitoral, sessao_eleitoral, consentimento_lgpd, token_anonimizacao, entrevistador_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+      [pesquisa_id, nome || null, idadeNum, genero || null, cidade || null, estadoOk, bairro || null, escolaridade || null, renda_familiar || null, ocupacao || null, zona_eleitoral || null, sessao_eleitoral || null, consentimento_lgpd || false, token, req.usuario?.id || null]
     )
     res.status(201).json({ entrevistado: result.rows[0] })
   } catch (err) {

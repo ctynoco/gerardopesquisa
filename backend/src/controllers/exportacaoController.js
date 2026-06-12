@@ -1,38 +1,35 @@
-const db = require('../config/database')
 const PDFDocument = require('pdfkit')
 const ExcelJS = require('exceljs')
 const { Parser } = require('json2csv')
+const exportacaoService = require('../services/exportacaoService')
 
 async function exportarPDF(req, res, next) {
   try {
     const { pesquisa_id } = req.params
-    const pesquisa = await db.query('SELECT * FROM pesquisas WHERE id = $1', [pesquisa_id])
-    if (!pesquisa.rows.length) return res.status(404).json({ error: 'Pesquisa não encontrada' })
+    const pesquisa = await exportacaoService.getPesquisa(pesquisa_id)
+    if (!pesquisa) return res.status(404).json({ error: 'Pesquisa não encontrada' })
 
-    const perguntas = await db.query('SELECT * FROM perguntas WHERE pesquisa_id = $1 ORDER BY ordenacao', [pesquisa_id])
-    const respostas = await db.query(
-      `SELECT r.*, p.titulo AS pergunta_titulo, p.tipo AS pergunta_tipo
-       FROM respostas r JOIN perguntas p ON p.id = r.pergunta_id
-       WHERE r.pesquisa_id = $1 ORDER BY r.created_at`, [pesquisa_id]
-    )
+    const perguntas = await exportacaoService.getPerguntas(pesquisa_id)
+    const respostas = await exportacaoService.getRespostasCompletas(pesquisa_id)
 
     const doc = new PDFDocument({ margin: 30 })
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename=pesquisa_${pesquisa_id}.pdf`)
     doc.pipe(res)
 
-    doc.fontSize(20).text(pesquisa.rows[0].titulo, { align: 'center' })
+    doc.fontSize(20).text(pesquisa.titulo, { align: 'center' })
     doc.moveDown()
-    doc.fontSize(10).text(`Período: ${pesquisa.rows[0].data_inicio || 'N/A'} a ${pesquisa.rows[0].data_fim || 'N/A'}`)
-    doc.text(`Margem de erro: ${pesquisa.rows[0].margem_erro || 'N/A'}% | Nível de confiança: ${pesquisa.rows[0].nivel_confianca || 'N/A'}%`)
+    doc.fontSize(10).text(`Período: ${pesquisa.data_inicio || 'N/A'} a ${pesquisa.data_fim || 'N/A'}`)
+    doc.text(`Margem de erro: ${pesquisa.margem_erro || 'N/A'}% | Nível de confiança: ${pesquisa.nivel_confianca || 'N/A'}%`)
     doc.moveDown()
 
-    for (const pergunta of perguntas.rows) {
+    const respostasPorPergunta = exportacaoService.getRespostasPorPergunta(respostas)
+    for (const pergunta of perguntas) {
       if (doc.y > 700) { doc.addPage() }
       doc.fontSize(12).text(pergunta.titulo, { underline: true })
       doc.moveDown(0.5)
 
-      const respostasPergunta = respostas.rows.filter((r) => r.pergunta_id === pergunta.id)
+      const respostasPergunta = respostasPorPergunta[pergunta.id] || []
       if (pergunta.tipo === 'unica_escolha' || pergunta.tipo === 'multipla_escolha' || pergunta.tipo === 'likert') {
         const contagem = {}
         respostasPergunta.forEach((r) => {
@@ -60,36 +57,18 @@ async function exportarExcel(req, res, next) {
     const workbook = new ExcelJS.Workbook()
     const sheet = workbook.addWorksheet('Respostas')
 
-    const perguntas = await db.query('SELECT * FROM perguntas WHERE pesquisa_id = $1 ORDER BY ordenacao', [pesquisa_id])
-    const respostas = await db.query(
-      `SELECT r.*, e.nome AS entrevistado_nome, e.cidade, e.estado, e.idade, e.genero
-       FROM respostas r
-       JOIN entrevistados e ON e.id = r.entrevistado_id
-       WHERE r.pesquisa_id = $1 ORDER BY r.entrevistado_id, r.pergunta_id`, [pesquisa_id]
-    )
+    const perguntas = await exportacaoService.getPerguntas(pesquisa_id)
+    const respostas = await exportacaoService.getRespostasCompletas(pesquisa_id)
 
     const headers = ['Entrevistado', 'Cidade', 'Estado', 'Idade', 'Gênero']
-    perguntas.rows.forEach((p) => headers.push(p.titulo))
+    perguntas.forEach((p) => headers.push(p.titulo))
     sheet.addRow(headers)
 
-    const rows = {}
-    for (const r of respostas.rows) {
-      if (!rows[r.entrevistado_id]) {
-        rows[r.entrevistado_id] = {
-          nome: r.entrevistado_nome,
-          cidade: r.cidade,
-          estado: r.estado,
-          idade: r.idade,
-          genero: r.genero,
-          respostas: {},
-        }
-      }
-      rows[r.entrevistado_id].respostas[r.pergunta_id] = r.resposta?.valor
-    }
+    const rows = exportacaoService.buildRespostasPorEntrevistado(respostas, perguntas)
 
     for (const row of Object.values(rows)) {
       const data = [row.nome, row.cidade, row.estado, row.idade, row.genero]
-      perguntas.rows.forEach((p) => data.push(row.respostas[p.id] || ''))
+      perguntas.forEach((p) => data.push(row.respostas[p.id] || ''))
       sheet.addRow(data)
     }
 
@@ -103,16 +82,11 @@ async function exportarExcel(req, res, next) {
 async function exportarCSV(req, res, next) {
   try {
     const { pesquisa_id } = req.params
-    const perguntas = await db.query('SELECT * FROM perguntas WHERE pesquisa_id = $1 ORDER BY ordenacao', [pesquisa_id])
-    const respostas = await db.query(
-      `SELECT r.*, e.nome AS entrevistado_nome, e.cidade, e.estado, e.idade, e.genero
-       FROM respostas r
-       JOIN entrevistados e ON e.id = r.entrevistado_id
-       WHERE r.pesquisa_id = $1 ORDER BY r.entrevistado_id, r.pergunta_id`, [pesquisa_id]
-    )
+    const perguntas = await exportacaoService.getPerguntas(pesquisa_id)
+    const respostas = await exportacaoService.getRespostasCompletas(pesquisa_id)
 
     const rows = {}
-    for (const r of respostas.rows) {
+    for (const r of respostas) {
       if (!rows[r.entrevistado_id]) {
         rows[r.entrevistado_id] = {
           Entrevistado: r.entrevistado_nome,
@@ -126,10 +100,10 @@ async function exportarCSV(req, res, next) {
     }
 
     const fields = ['Entrevistado', 'Cidade', 'Estado', 'Idade', 'Genero']
-    perguntas.rows.forEach((p) => fields.push(p.titulo))
+    perguntas.forEach((p) => fields.push(p.titulo))
 
     for (const row of Object.values(rows)) {
-      perguntas.rows.forEach((p) => {
+      perguntas.forEach((p) => {
         row[p.titulo] = row[p.id]
         delete row[p.id]
       })
@@ -147,20 +121,12 @@ async function exportarCSV(req, res, next) {
 async function exportarJSON(req, res, next) {
   try {
     const { pesquisa_id } = req.params
-    const pesquisa = await db.query('SELECT * FROM pesquisas WHERE id = $1', [pesquisa_id])
-    const perguntas = await db.query('SELECT * FROM perguntas WHERE pesquisa_id = $1 ORDER BY ordenacao', [pesquisa_id])
-    const respostas = await db.query(
-      `SELECT r.*, e.nome AS entrevistado_nome, e.cidade, e.estado, e.idade, e.genero
-       FROM respostas r
-       JOIN entrevistados e ON e.id = r.entrevistado_id
-       WHERE r.pesquisa_id = $1 ORDER BY r.entrevistado_id`, [pesquisa_id]
-    )
+    const pesquisa = await exportacaoService.getPesquisa(pesquisa_id)
+    if (!pesquisa) return res.status(404).json({ error: 'Pesquisa não encontrada' })
+    const perguntas = await exportacaoService.getPerguntas(pesquisa_id)
+    const respostas = await exportacaoService.getRespostasCompletas(pesquisa_id)
 
-    res.json({
-      pesquisa: pesquisa.rows[0],
-      perguntas: perguntas.rows,
-      respostas: respostas.rows,
-    })
+    res.json({ pesquisa, perguntas, respostas })
   } catch (err) { next(err) }
 }
 

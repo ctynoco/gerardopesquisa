@@ -4,32 +4,34 @@ import { DataGrid } from '@mui/x-data-grid'
 import { ptBR } from '@mui/x-data-grid/locales'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
+import ConfirmDialog from '../components/ConfirmDialog'
 import api from '../services/api'
 
 export default function Pesquisas() {
   const [pesquisas, setPesquisas] = useState([])
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ titulo: '', descricao: '', margem_erro: '', nivel_confianca: '' })
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   useEffect(() => { load() }, [])
 
   async function load() {
-    const res = await api.get('/pesquisas')
-    setPesquisas(res.data.pesquisas)
+    try { const res = await api.get('/pesquisas'); setPesquisas(res.data.pesquisas) } catch (err) { console.error('Erro ao carregar pesquisas', err) }
   }
 
   async function criar(e) {
     e.preventDefault()
-    await api.post('/pesquisas', form)
-    setOpen(false)
-    setForm({ titulo: '', descricao: '', margem_erro: '', nivel_confianca: '' })
-    load()
+    try {
+      await api.post('/pesquisas', form)
+      setOpen(false)
+      setForm({ titulo: '', descricao: '', margem_erro: '', nivel_confianca: '' })
+      load()
+    } catch (err) { console.error('Erro ao criar pesquisa', err) }
   }
 
-  async function remover(id) {
-    if (!window.confirm('Remover pesquisa?')) return
-    await api.delete(`/pesquisas/${id}`)
-    load()
+  async function remover() {
+    if (!confirmDelete) return
+    try { await api.delete(`/pesquisas/${confirmDelete}`); setConfirmDelete(null); load() } catch (err) { console.error('Erro ao remover', err); setConfirmDelete(null) }
   }
 
   const statusLabel = { rascunho: 'Rascunho', ativa: 'Ativa', concluida: 'Concluída' }
@@ -43,7 +45,7 @@ export default function Pesquisas() {
     { field: 'total_entrevistados', headerName: 'Entrevistados', width: 140, valueFormatter: (v) => v || 0 },
     { field: 'criador', headerName: 'Criador', width: 150 },
     { field: 'actions', headerName: 'Ações', width: 100, sortable: false, renderCell: ({ row }) => (
-      <Tooltip title="Remover"><IconButton size="small" onClick={() => remover(row.id)}><DeleteIcon fontSize="small" color="error" /></IconButton></Tooltip>
+      <Tooltip title="Remover"><IconButton size="small" onClick={() => setConfirmDelete(row.id)}><DeleteIcon fontSize="small" color="error" /></IconButton></Tooltip>
     )},
   ]
 
@@ -73,6 +75,15 @@ export default function Pesquisas() {
       </Dialog>
 
       <DataGrid rows={pesquisas} columns={columns} pageSizeOptions={[10, 25, 50]} getRowId={(r) => r.id} autoHeight disableRowSelectionOnClick density="comfortable" localeText={ptBR.components.MuiDataGrid.defaultProps.localeText} sx={{ border: 0 }} />
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Remover pesquisa"
+        message="Tem certeza que deseja remover esta pesquisa? Todas as perguntas e respostas associadas serão perdidas."
+        onConfirm={remover}
+        onCancel={() => setConfirmDelete(null)}
+        confirmText="Remover"
+      />
     </Box>
   )
 }

@@ -1,4 +1,5 @@
 const db = require('../config/database')
+const estatisticasService = require('../services/estatisticasService')
 
 async function listar(req, res, next) {
   try {
@@ -24,9 +25,6 @@ async function listar(req, res, next) {
 async function criar(req, res, next) {
   try {
     const { pesquisa_id, pergunta_id, entrevistado_id, resposta } = req.body
-    if (!pesquisa_id || !pergunta_id || !entrevistado_id || resposta === undefined) {
-      return res.status(400).json({ error: 'pesquisa_id, pergunta_id, entrevistado_id e resposta são obrigatórios' })
-    }
     const result = await db.query(
       `INSERT INTO respostas (pesquisa_id, pergunta_id, entrevistado_id, resposta)
        VALUES ($1, $2, $3, $4)
@@ -58,51 +56,28 @@ async function estatisticas(req, res, next) {
       let dados = { pergunta_id: pergunta.id, titulo: pergunta.titulo, tipo: pergunta.tipo, total: respostas.rows.length }
 
       if (pergunta.tipo === 'multipla_escolha' || pergunta.tipo === 'unica_escolha' || pergunta.tipo === 'likert') {
-        const contagem = await db.query(
-          `SELECT resposta->>'valor' AS valor, COUNT(*) AS quantidade
-           FROM respostas WHERE pesquisa_id = $1 AND pergunta_id = $2
-           GROUP BY resposta->>'valor' ORDER BY quantidade DESC`,
-          [pesquisa_id, pergunta.id]
-        )
+        const contagem = await estatisticasService.getContagemRespostas(pesquisa_id, pergunta.id)
         dados.opcoes = pergunta.opcoes
-        dados.contagem = contagem.rows
+        dados.contagem = contagem
       }
 
       if (pergunta.tipo === 'numerica') {
-        const stats = await db.query(
-          `SELECT AVG((resposta->>'valor')::numeric) AS media,
-                  MIN((resposta->>'valor')::numeric) AS minimo,
-                  MAX((resposta->>'valor')::numeric) AS maximo
-           FROM respostas WHERE pesquisa_id = $1 AND pergunta_id = $2`,
-          [pesquisa_id, pergunta.id]
-        )
-        dados.estatisticas = stats.rows[0]
+        dados.estatisticas = await estatisticasService.getEstatisticasNumericas(pesquisa_id, pergunta.id)
       }
 
       resultados.push(dados)
     }
 
-    const [totalEntrevistados, perfilRes] = await Promise.all([
-      db.query('SELECT COUNT(DISTINCT entrevistado_id) FROM respostas WHERE pesquisa_id = $1', [pesquisa_id]),
-      db.query(
-        `SELECT
-           (SELECT json_agg(json_build_object('valor', genero, 'quantidade', qtd) ORDER BY qtd DESC)
-            FROM (SELECT COALESCE(genero, 'N/I') AS genero, COUNT(*)::int AS qtd FROM entrevistados WHERE pesquisa_id = $1 GROUP BY genero) sub) AS genero,
-           (SELECT json_agg(json_build_object('valor', faixa, 'quantidade', qtd) ORDER BY qtd DESC)
-            FROM (SELECT CASE WHEN idade < 18 THEN '16-17' WHEN idade <= 24 THEN '18-24' WHEN idade <= 34 THEN '25-34' WHEN idade <= 44 THEN '35-44' WHEN idade <= 59 THEN '45-59' ELSE '60+' END AS faixa, COUNT(*)::int AS qtd FROM entrevistados WHERE pesquisa_id = $1 AND idade IS NOT NULL GROUP BY faixa) sub) AS idade,
-           (SELECT json_agg(json_build_object('valor', escolaridade, 'quantidade', qtd) ORDER BY qtd DESC)
-            FROM (SELECT COALESCE(escolaridade, 'N/I') AS escolaridade, COUNT(*)::int AS qtd FROM entrevistados WHERE pesquisa_id = $1 GROUP BY escolaridade) sub) AS escolaridade,
-           (SELECT json_agg(json_build_object('valor', renda, 'quantidade', qtd) ORDER BY qtd DESC)
-            FROM (SELECT COALESCE(renda_familiar, 'N/I') AS renda, COUNT(*)::int AS qtd FROM entrevistados WHERE pesquisa_id = $1 GROUP BY renda) sub) AS renda`,
-        [pesquisa_id]
-      ),
+    const [total, perfil] = await Promise.all([
+      estatisticasService.getTotalEntrevistados(pesquisa_id),
+      estatisticasService.getPerfilEntrevistados(pesquisa_id),
     ])
 
     res.json({
       pesquisa_id: Number(pesquisa_id),
-      total_entrevistados: parseInt(totalEntrevistados.rows[0].count),
+      total_entrevistados: total,
       perguntas: resultados,
-      perfil: perfilRes.rows[0] || {},
+      perfil,
     })
   } catch (err) { next(err) }
 }

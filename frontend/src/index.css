@@ -137,6 +137,40 @@ body {
   display: none;
 }
 
+/* Print dialog — ensure content prints properly */
+@media print {
+  .MuiDialog-root {
+    position: static !important;
+  }
+
+  .MuiDialog-container {
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+    min-height: auto !important;
+  }
+
+  .MuiDialog-paperFullScreen {
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  .MuiDialogTitle-root {
+    display: none !important;
+  }
+
+  .MuiDialogContent-root {
+    padding: 0 !important;
+  }
+
+  .print-content {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
 /* A4 na tela (opcional) */
 .a4-page {
   max-width: 210mm;

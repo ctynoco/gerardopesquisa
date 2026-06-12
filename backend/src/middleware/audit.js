@@ -17,11 +17,14 @@ async function auditLog(req, res, next) {
           ip: req.ip || req.connection?.remoteAddress,
         }
 
-        db.query(
+        const auditResult = db.query(
           `INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id, dados_antigos, dados_novos, ip)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [log.usuario_id, log.acao, log.entidade, log.entidade_id, log.dados_antigos, log.dados_novos, log.ip]
-        ).catch((err) => console.error('Audit log error:', err))
+        )
+        if (auditResult && typeof auditResult.catch === 'function') {
+          auditResult.catch((err) => console.error('Audit log error:', err))
+        }
       }
     }
 

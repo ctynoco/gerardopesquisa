@@ -11,12 +11,12 @@ async function painelSupervisao(req, res, next) {
         `SELECT e.id, e.nome, e.bairro, e.cidade, e.created_at,
                 u.nome AS entrevistador
          FROM entrevistados e
-         JOIN usuarios u ON u.id = e.entrevistador_id
+         LEFT JOIN usuarios u ON u.id = e.entrevistador_id
          WHERE e.pesquisa_id = $1
          ORDER BY e.created_at DESC LIMIT 20`, [pesquisa_id]
       ),
       db.query(
-        `SELECT COUNT(DISTINCT e.entrevistador_id)::int AS ativos
+        `SELECT COALESCE(COUNT(DISTINCT e.entrevistador_id), 0)::int AS ativos
          FROM entrevistados e
          WHERE e.pesquisa_id = $1
            AND e.created_at > NOW() - ($2 || ' minutes')::interval`,
@@ -33,7 +33,7 @@ async function painelSupervisao(req, res, next) {
                 MAX(e.created_at) AS ultima_atividade
          FROM usuarios u
          LEFT JOIN entrevistados e ON e.entrevistador_id = u.id AND e.pesquisa_id = $1
-         WHERE u.tipo = 'entrevistador'
+         WHERE u.perfil = 'entrevistador'
          GROUP BY u.id, u.nome
          ORDER BY total DESC`, [pesquisa_id]
       ),
