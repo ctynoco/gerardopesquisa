@@ -13,11 +13,36 @@ import modelos from '../data/modelosPerguntas'
 import api from '../services/api'
 
 const tipos = [
-  { value: 'unica_escolha', label: 'Única Escolha' },
-  { value: 'multipla_escolha', label: 'Múltipla Escolha' },
-  { value: 'aberta', label: 'Aberta' },
-  { value: 'likert', label: 'Escala 1-5' },
-  { value: 'numerica', label: 'Escala 1-10' },
+  { value: 'unica_escolha', label: '01. Única Escolha' },
+  { value: 'multipla_escolha', label: '02. Múltipla Escolha' },
+  { value: 'sim_nao', label: '03. Sim / Não' },
+  { value: 'escala_avaliacao', label: '04. Escala de Avaliação' },
+  { value: 'escala_likert', label: '05. Escala Likert' },
+  { value: 'nota_0_10', label: '06. Nota de 0 a 10' },
+  { value: 'ranking', label: '07. Ranking' },
+  { value: 'matriz', label: '08. Matriz' },
+  { value: 'texto_curto', label: '09. Texto Curto' },
+  { value: 'texto_longo', label: '10. Texto Longo' },
+  { value: 'voto_espontaneo', label: '11. Intenção de Voto Espontânea' },
+  { value: 'voto_estimulado', label: '12. Intenção de Voto Estimulada' },
+  { value: 'rejeicao_candidato', label: '13. Rejeição de Candidato' },
+  { value: 'segundo_turno', label: '14. Simulação de Segundo Turno' },
+  { value: 'aprovacao_desaprovacao', label: '15. Aprovação / Desaprovação' },
+  { value: 'conhecimento_candidato', label: '16. Conhecimento de Candidato' },
+  { value: 'grau_decisao_voto', label: '17. Grau de Decisão do Voto' },
+  { value: 'problema_prioritario', label: '18. Problema Prioritário' },
+  { value: 'prioridade_investimento', label: '19. Prioridade de Investimento' },
+  { value: 'perfil_eleitor', label: '20. Perfil do Eleitor' },
+  { value: 'faixa_etaria', label: '21. Faixa Etária' },
+  { value: 'sexo', label: '22. Sexo' },
+  { value: 'escolaridade', label: '23. Escolaridade' },
+  { value: 'faixa_renda', label: '24. Faixa de Renda' },
+  { value: 'municipio', label: '25. Município' },
+  { value: 'bairro', label: '26. Bairro' },
+  { value: 'zona_eleitoral', label: '27. Zona Eleitoral' },
+  { value: 'secao_eleitoral', label: '28. Seção Eleitoral' },
+  { value: 'geolocalizacao', label: '29. Geolocalização (GPS)' },
+  { value: 'comentario_aberto', label: '30. Comentário Aberto' },
 ]
 
 export default function Questionario() {
@@ -200,8 +225,8 @@ export default function Questionario() {
                   </FormControl>
                 </Grid>
                 <Grid item xs={6}>
-                  {(editando.tipo === 'unica_escolha' || editando.tipo === 'multipla_escolha') && (
-                    <TextField label="Opções (separadas por ,)" value={editando.opcoes} onChange={(e) => setEditando({ ...editando, opcoes: e.target.value })} size="small" fullWidth />
+                  {!['texto_curto', 'texto_longo', 'comentario_aberto', 'geolocalizacao', 'data'].includes(editando.tipo) && (
+                    <TextField label="Opções / Rótulos (separados por ,)" value={editando.opcoes} onChange={(e) => setEditando({ ...editando, opcoes: e.target.value })} size="small" fullWidth />
                   )}
                 </Grid>
               </Grid>
@@ -332,7 +357,7 @@ export default function Questionario() {
                       <Typography sx={{ fontWeight: 700, fontSize: '11pt' }}>{i + 1}.</Typography>
                       <Typography sx={{ fontWeight: 700, fontSize: '11pt' }}>{p.titulo}</Typography>
                     </Box>
-                    {p.tipo === 'unica_escolha' && p.opcoes && (
+                    {['unica_escolha', 'sim_nao', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral'].includes(p.tipo) && p.opcoes && (
                       <Box sx={{ ml: 2, mt: 0.5 }}>
                         {p.opcoes.map((o, oi) => (
                           <Box key={oi} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.15 }}>
@@ -352,7 +377,7 @@ export default function Questionario() {
                         ))}
                       </Box>
                     )}
-                    {p.tipo === 'likert' && p.opcoes && (
+                    {['likert', 'escala_likert'].includes(p.tipo) && p.opcoes && (
                       <Box sx={{ ml: 2, mt: 0.5, overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8pt' }}>
                           <thead>
@@ -376,7 +401,7 @@ export default function Questionario() {
                         </table>
                       </Box>
                     )}
-                    {p.tipo === 'numerica' && (
+                    {['numerica', 'nota_0_10', 'escala_avaliacao'].includes(p.tipo) && (
                       <Box sx={{ ml: 2, mt: 0.5 }}>
                         <Typography sx={{ fontSize: '9pt', color: '#666', fontStyle: 'italic' }}>Atribua uma nota de 1 a 10:</Typography>
                         <Box sx={{ display: 'flex', gap: 0.25, flexWrap: 'wrap', mt: 0.25 }}>
@@ -389,20 +414,60 @@ export default function Questionario() {
                         </Box>
                       </Box>
                     )}
-                    {(p.tipo === 'aberta' || p.tipo === 'texto') && (
+                    {p.tipo === 'ranking' && p.opcoes && (
                       <Box sx={{ ml: 2, mt: 0.5 }}>
-                        {[1, 2].map((l) => (
-                          <Box key={l} sx={{ borderBottom: '1px solid #999', mb: 0.5, height: 20 }} />
+                        {p.opcoes.map((o, oi) => (
+                          <Box key={oi} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.15 }}>
+                            <Box component="span" sx={{ width: 18, height: 18, borderRadius: '50%', border: '1.5px solid #555', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '8pt', fontWeight: 700 }}>{oi + 1}</Box>
+                            <Typography sx={{ fontSize: '10pt' }}>{o}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                    {p.tipo === 'matriz' && p.opcoes && (
+                      <Box sx={{ ml: 2, mt: 0.5, overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8pt' }}>
+                          <thead>
+                            <tr>
+                              <td style={{ width: '40%', padding: 2 }}><em>Itens</em></td>
+                              {p.opcoes.map((o, oi) => (
+                                <td key={oi} style={{ textAlign: 'center', padding: 2, borderLeft: '1px solid #ccc', fontWeight: 700 }}>{o}</td>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td style={{ padding: 2 }}>{p.titulo}</td>
+                              {p.opcoes.map((_, oi) => (
+                                <td key={oi} style={{ textAlign: 'center', borderLeft: '1px solid #ccc', padding: 2 }}>
+                                  <Box component="span" sx={{ width: 12, height: 12, borderRadius: '50%', border: '1.5px solid #555', display: 'inline-block' }} />
+                                </td>
+                              ))}
+                            </tr>
+                          </tbody>
+                        </table>
+                      </Box>
+                    )}
+                    {['texto_curto', 'texto_longo', 'comentario_aberto', 'texto', 'aberta'].includes(p.tipo) && (
+                      <Box sx={{ ml: 2, mt: 0.5 }}>
+                        {[1, (p.tipo === 'texto_longo' || p.tipo === 'aberta') ? 4 : 2].map((l) => (
+                          <Box key={l} sx={{ borderBottom: '1px solid #999', mb: 0.5, height: (p.tipo === 'texto_longo' || p.tipo === 'aberta') ? 28 : 20 }} />
                         ))}
                         <Typography sx={{ fontSize: '8pt', color: '#999', fontStyle: 'italic' }}>Resposta:</Typography>
                       </Box>
                     )}
-                    {p.tipo === 'data' && (
+                    {['data'].includes(p.tipo) && (
                       <Box sx={{ ml: 2, mt: 0.5 }}>
                         <Typography sx={{ fontSize: '10pt' }}>___ / ___ / _______</Typography>
                       </Box>
                     )}
-                    {p.tipo !== 'unica_escolha' && p.tipo !== 'multipla_escolha' && p.tipo !== 'likert' && p.tipo !== 'numerica' && p.tipo !== 'aberta' && p.tipo !== 'texto' && p.tipo !== 'data' && (
+                    {p.tipo === 'geolocalizacao' && (
+                      <Box sx={{ ml: 2, mt: 0.5, display: 'flex', gap: 2 }}>
+                        <Box sx={{ flex: 1 }}><Typography sx={{ fontSize: '8pt', color: '#999' }}>Latitude:</Typography><Box sx={{ borderBottom: '1px solid #999', height: 20 }} /></Box>
+                        <Box sx={{ flex: 1 }}><Typography sx={{ fontSize: '8pt', color: '#999' }}>Longitude:</Typography><Box sx={{ borderBottom: '1px solid #999', height: 20 }} /></Box>
+                      </Box>
+                    )}
+                    {!['unica_escolha', 'multipla_escolha', 'sim_nao', 'escala_avaliacao', 'escala_likert', 'nota_0_10', 'ranking', 'matriz', 'texto_curto', 'texto_longo', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral', 'geolocalizacao', 'comentario_aberto', 'likert', 'numerica', 'aberta', 'texto', 'data'].includes(p.tipo) && (
                       <Box sx={{ ml: 2, mt: 0.5 }}>
                         {[1, 2].map((l) => (
                           <Box key={l} sx={{ borderBottom: '1px solid #999', mb: 0.5, height: 20 }} />
@@ -512,7 +577,7 @@ export default function Questionario() {
                   <Typography sx={{ fontWeight: 700, fontSize: '12pt', color: '#000' }}>{p.titulo}</Typography>
                 </Box>
 
-                {p.tipo === 'unica_escolha' && p.opcoes && (
+                {['unica_escolha', 'sim_nao', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral'].includes(p.tipo) && p.opcoes && (
                   <Box sx={{ ml: 3, mt: 0.5 }}>
                     {p.opcoes.map((o, oi) => (
                       <Box key={oi} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.25 }}>
@@ -534,7 +599,7 @@ export default function Questionario() {
                   </Box>
                 )}
 
-                {p.tipo === 'likert' && p.opcoes && (
+                {['likert', 'escala_likert'].includes(p.tipo) && p.opcoes && (
                   <Box sx={{ ml: 3, mt: 0.5, overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
                       <thead>
@@ -559,7 +624,7 @@ export default function Questionario() {
                   </Box>
                 )}
 
-                {p.tipo === 'numerica' && (
+                {['numerica', 'nota_0_10', 'escala_avaliacao'].includes(p.tipo) && (
                   <Box sx={{ ml: 3, mt: 0.5 }}>
                     <Typography sx={{ fontSize: '10pt', color: '#666', fontStyle: 'italic' }}>Atribua uma nota de 1 a 10:</Typography>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
@@ -573,16 +638,52 @@ export default function Questionario() {
                   </Box>
                 )}
 
-                {(p.tipo === 'aberta' || p.tipo === 'texto') && (
+                {p.tipo === 'ranking' && p.opcoes && (
                   <Box sx={{ ml: 3, mt: 0.5 }}>
-                    {[1, 2, 3].map((l) => (
-                      <Box key={l} sx={{ borderBottom: '1px solid #999', mb: 0.75, height: 24 }} />
+                    {p.opcoes.map((o, oi) => (
+                      <Box key={oi} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.25 }}>
+                        <Box component="span" sx={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px solid #555', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '9pt', fontWeight: 700 }}>{oi + 1}</Box>
+                        <Typography sx={{ fontSize: '11pt' }}>{o}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
+                {p.tipo === 'matriz' && p.opcoes && (
+                  <Box sx={{ ml: 3, mt: 0.5, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
+                      <thead>
+                        <tr>
+                          <td style={{ width: '40%', padding: 4 }}><em>Itens</em></td>
+                          {p.opcoes.map((o, oi) => (
+                            <td key={oi} style={{ textAlign: 'center', padding: 4, borderLeft: '1px solid #ccc', fontWeight: 700 }}>{o}</td>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ padding: 4 }}>{p.titulo}</td>
+                          {p.opcoes.map((_, oi) => (
+                            <td key={oi} style={{ textAlign: 'center', borderLeft: '1px solid #ccc', padding: 4 }}>
+                              <Box component="span" sx={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid #555', display: 'inline-block' }} />
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </Box>
+                )}
+
+                {['texto_curto', 'texto_longo', 'comentario_aberto', 'texto', 'aberta'].includes(p.tipo) && (
+                  <Box sx={{ ml: 3, mt: 0.5 }}>
+                    {[1, (p.tipo === 'texto_longo' || p.tipo === 'aberta') ? 5 : 3].map((l) => (
+                      <Box key={l} sx={{ borderBottom: '1px solid #999', mb: 0.75, height: (p.tipo === 'texto_longo' || p.tipo === 'aberta') ? 32 : 24 }} />
                     ))}
                     <Typography sx={{ fontSize: '9pt', color: '#999', fontStyle: 'italic' }}>Resposta:</Typography>
                   </Box>
                 )}
 
-                {p.tipo === 'data' && (
+                {['data'].includes(p.tipo) && (
                   <Box sx={{ ml: 3, mt: 0.5 }}>
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       <Typography sx={{ fontSize: '11pt' }}>___ / ___ / _______</Typography>
@@ -590,7 +691,14 @@ export default function Questionario() {
                   </Box>
                 )}
 
-                {p.tipo !== 'unica_escolha' && p.tipo !== 'multipla_escolha' && p.tipo !== 'likert' && p.tipo !== 'numerica' && p.tipo !== 'aberta' && p.tipo !== 'texto' && p.tipo !== 'data' && (
+                {p.tipo === 'geolocalizacao' && (
+                  <Box sx={{ ml: 3, mt: 0.5, display: 'flex', gap: 3 }}>
+                    <Box sx={{ flex: 1 }}><Typography sx={{ fontSize: '9pt', color: '#999' }}>Latitude:</Typography><Box sx={{ borderBottom: '1px solid #999', height: 24 }} /></Box>
+                    <Box sx={{ flex: 1 }}><Typography sx={{ fontSize: '9pt', color: '#999' }}>Longitude:</Typography><Box sx={{ borderBottom: '1px solid #999', height: 24 }} /></Box>
+                  </Box>
+                )}
+
+                {!['unica_escolha', 'multipla_escolha', 'sim_nao', 'escala_avaliacao', 'escala_likert', 'nota_0_10', 'ranking', 'matriz', 'texto_curto', 'texto_longo', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral', 'geolocalizacao', 'comentario_aberto', 'likert', 'numerica', 'aberta', 'texto', 'data'].includes(p.tipo) && (
                   <Box sx={{ ml: 3, mt: 0.5 }}>
                     {[1, 2].map((l) => (
                       <Box key={l} sx={{ borderBottom: '1px solid #999', mb: 0.75, height: 24 }} />

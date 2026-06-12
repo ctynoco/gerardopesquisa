@@ -201,7 +201,7 @@ export default function Coleta() {
     setAutoAvancando(false)
     const p = perguntas[qAtual]
     if (!p) return
-    if (!respostas[p.id] && p.tipo !== 'aberta') { setErro('Selecione uma resposta.'); return }
+    if (!respostas[p.id] && !['aberta', 'comentario_aberto', 'texto_longo'].includes(p.tipo)) { setErro('Selecione uma resposta.'); return }
     salvarRespostaApi(p.id, respostas[p.id])
     if (qAtual < perguntas.length - 1) setQAtual((q) => q + 1)
     setErro('')
@@ -321,7 +321,7 @@ export default function Coleta() {
 
     const jaRespondeu = !!respostas[p.id]
     const isLast = qAtual === perguntas.length - 1
-    const podeAvancar = isLast ? jaRespondeu : !!respostas[p.id] || p.tipo !== 'aberta'
+    const podeAvancar = isLast ? jaRespondeu : !!respostas[p.id] || ['aberta', 'comentario_aberto', 'texto_longo'].includes(p.tipo)
 
     return (
       <Box sx={{ maxWidth: 520, mx: 'auto' }}>
@@ -386,7 +386,7 @@ export default function Coleta() {
             </Typography>
           )}
 
-          {p.tipo === 'unica_escolha' || p.tipo === 'multipla_escolha' ? (
+          {['unica_escolha', 'multipla_escolha', 'sim_nao', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral'].includes(p.tipo) ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {p.opcoes?.map((o) => (
                 <Paper key={o} variant="outlined" onClick={() => selecionar(o)}

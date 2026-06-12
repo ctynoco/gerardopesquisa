@@ -55,13 +55,13 @@ async function estatisticas(req, res, next) {
 
       let dados = { pergunta_id: pergunta.id, titulo: pergunta.titulo, tipo: pergunta.tipo, total: respostas.rows.length }
 
-      if (pergunta.tipo === 'multipla_escolha' || pergunta.tipo === 'unica_escolha' || pergunta.tipo === 'likert') {
+      if (['multipla_escolha', 'unica_escolha', 'likert', 'escala_likert', 'sim_nao', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral', 'ranking', 'matriz'].includes(pergunta.tipo)) {
         const contagem = await estatisticasService.getContagemRespostas(pesquisa_id, pergunta.id)
         dados.opcoes = pergunta.opcoes
         dados.contagem = contagem
       }
 
-      if (pergunta.tipo === 'numerica') {
+      if (['numerica', 'nota_0_10', 'escala_avaliacao'].includes(pergunta.tipo)) {
         dados.estatisticas = await estatisticasService.getEstatisticasNumericas(pesquisa_id, pergunta.id)
       }
 

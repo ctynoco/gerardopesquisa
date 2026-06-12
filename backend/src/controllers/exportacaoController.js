@@ -30,7 +30,7 @@ async function exportarPDF(req, res, next) {
       doc.moveDown(0.5)
 
       const respostasPergunta = respostasPorPergunta[pergunta.id] || []
-      if (pergunta.tipo === 'unica_escolha' || pergunta.tipo === 'multipla_escolha' || pergunta.tipo === 'likert') {
+      if (['unica_escolha', 'multipla_escolha', 'likert', 'escala_likert', 'sim_nao', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral', 'ranking', 'matriz', 'nota_0_10', 'escala_avaliacao', 'numerica'].includes(pergunta.tipo)) {
         const contagem = {}
         respostasPergunta.forEach((r) => {
           const val = r.resposta?.valor

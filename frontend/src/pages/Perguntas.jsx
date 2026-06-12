@@ -7,7 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ConfirmDialog from '../components/ConfirmDialog'
 import api from '../services/api'
 
-const tipos = ['texto', 'multipla_escolha', 'unica_escolha', 'numerica', 'data', 'likert', 'aberta']
+const tipos = ['unica_escolha', 'multipla_escolha', 'sim_nao', 'escala_avaliacao', 'escala_likert', 'nota_0_10', 'ranking', 'matriz', 'texto_curto', 'texto_longo', 'voto_espontaneo', 'voto_estimulado', 'rejeicao_candidato', 'segundo_turno', 'aprovacao_desaprovacao', 'conhecimento_candidato', 'grau_decisao_voto', 'problema_prioritario', 'prioridade_investimento', 'perfil_eleitor', 'faixa_etaria', 'sexo', 'escolaridade', 'faixa_renda', 'municipio', 'bairro', 'zona_eleitoral', 'secao_eleitoral', 'geolocalizacao', 'comentario_aberto', 'texto', 'aberta', 'data', 'likert', 'numerica']
 
 export default function Perguntas() {
   const [perguntas, setPerguntas] = useState([])
