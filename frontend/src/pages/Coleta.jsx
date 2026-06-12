@@ -5,7 +5,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import VolumeUpIcon from '@mui/icons-material/VolumeUp'
 import MicIcon from '@mui/icons-material/Mic'
 import TimerIcon from '@mui/icons-material/Timer'
-import api from '../services/api'
+import api, { addOfflineItem, getOfflineCount } from '../services/api'
 
 const PERFIL = [
   { id: 'nome', label: 'Nome', type: 'text' },
@@ -138,11 +138,7 @@ export default function Coleta() {
       tempo_seg: tempoSeg,
     }
     if (!online) {
-      try {
-        const fila = JSON.parse(localStorage.getItem('fila_offline') || '[]')
-        fila.push({ url: '/respostas', method: 'POST', body: payload })
-        localStorage.setItem('fila_offline', JSON.stringify(fila))
-      } catch (e) { console.error('Erro ao salvar fila offline', e) }
+      addOfflineItem('/respostas', payload)
       return
     }
     await api.post('/respostas', payload).catch((e) => console.error('Erro ao salvar resposta', e))
@@ -161,12 +157,7 @@ export default function Coleta() {
     setErro('')
     for (const [pid, valor] of Object.entries(respostas)) {
       if (!online) {
-        const fila = JSON.parse(localStorage.getItem('fila_offline') || '[]')
-        fila.push({
-          url: '/respostas', method: 'POST',
-          body: { pesquisa_id: Number(pesquisaId), pergunta_id: Number(pid), entrevistado_id: Number(entrevistadoId), resposta: { valor } },
-        })
-        localStorage.setItem('fila_offline', JSON.stringify(fila))
+        addOfflineItem('/respostas', { pesquisa_id: Number(pesquisaId), pergunta_id: Number(pid), entrevistado_id: Number(entrevistadoId), resposta: { valor } })
       } else {
         await salvarRespostaApi(pid, valor)
       }
@@ -431,7 +422,9 @@ export default function Coleta() {
 
         {!online && (
           <Paper elevation={0} sx={{ p: 1, mb: 1.5, bgcolor: 'warning.light', borderRadius: 2, textAlign: 'center' }}>
-            <Typography variant="caption" fontWeight={600}>Modo offline — dados serão sincronizados quando houver internet</Typography>
+            <Typography variant="caption" fontWeight={600}>
+              Modo offline — {getOfflineCount()} pendentes — dados serão sincronizados quando houver internet
+            </Typography>
           </Paper>
         )}
 
