@@ -20,7 +20,11 @@ async function listar(req, res, next) {
        ORDER BY p.created_at DESC
        LIMIT $${params.length - 1} OFFSET $${params.length}`, params
     )
-    const count = await db.query('SELECT COUNT(*) FROM pesquisas')
+    const countParams = status ? [status] : []
+    const count = await db.query(
+      `SELECT COUNT(*) FROM pesquisas p ${where}`,
+      countParams
+    )
     res.json({ pesquisas: result.rows, total: parseInt(count.rows[0].count), page: Number(page) })
   } catch (err) { next(err) }
 }

@@ -20,7 +20,11 @@ async function listar(req, res, next) {
        ORDER BY e.created_at DESC
        LIMIT $${params.length - 1} OFFSET $${params.length}`, params
     )
-    const count = await db.query('SELECT COUNT(*) FROM entrevistados')
+    const countParams = pesquisa_id ? [pesquisa_id] : []
+    const count = await db.query(
+      `SELECT COUNT(*) FROM entrevistados e ${where}`,
+      countParams
+    )
     res.json({ entrevistados: result.rows, total: parseInt(count.rows[0].count), page: Number(page) })
   } catch (err) { next(err) }
 }
@@ -53,7 +57,7 @@ async function criar(req, res, next) {
     res.status(201).json({ entrevistado: result.rows[0] })
   } catch (err) {
     console.error('[CRIAR ENTREVISTADO]', { message: err.message, code: err.code, detail: err.detail, body: req.body })
-    res.status(500).json({ error: err.message || 'Erro', detail: err.detail || null, code: err.code || null })
+    next(err)
   }
 }
 

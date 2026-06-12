@@ -33,7 +33,7 @@ async function sincronizarFila() {
       } catch (e) { console.error('Erro ao sincronizar item offline', e); pendentes.push(item) }
     }
     localStorage.setItem('fila_offline', JSON.stringify(pendentes))
-  } catch {}
+  } catch (e) { console.error('Erro ao sincronizar fila offline', e) }
 }
 
 window.addEventListener('online', () => { sincronizarFila() })

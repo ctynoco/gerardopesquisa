@@ -5,9 +5,10 @@ async function cruzamentos(req, res, next) {
     const { pesquisa_id } = req.params
     const { agrupar_por = 'genero' } = req.query
 
-    const allowed = ['genero', 'escolaridade', 'renda_familiar', 'cidade', 'estado']
-    if (!allowed.includes(agrupar_por)) {
-      return res.status(400).json({ error: `agrupar_por deve ser um de: ${allowed.join(', ')}` })
+    const colunas = { genero: 'e.genero', escolaridade: 'e.escolaridade', renda_familiar: 'e.renda_familiar', cidade: 'e.cidade', estado: 'e.estado' }
+    const grupoCol = colunas[agrupar_por]
+    if (!grupoCol) {
+      return res.status(400).json({ error: `agrupar_por deve ser um de: ${Object.keys(colunas).join(', ')}` })
     }
 
     const perguntas = await db.query(
@@ -19,11 +20,11 @@ async function cruzamentos(req, res, next) {
     for (const pergunta of perguntas.rows) {
       const dados = await db.query(
         `SELECT r.pergunta_id, r.resposta->>'valor' AS resposta_valor,
-                e.${agrupar_por} AS grupo, COUNT(*) AS quantidade
+                ${grupoCol} AS grupo, COUNT(*) AS quantidade
          FROM respostas r
          JOIN entrevistados e ON e.id = r.entrevistado_id
          WHERE r.pesquisa_id = $1 AND r.pergunta_id = $2
-         GROUP BY r.pergunta_id, resposta_valor, e.${agrupar_por}
+         GROUP BY r.pergunta_id, resposta_valor, ${grupoCol}
          ORDER BY resposta_valor, grupo`,
         [pesquisa_id, pergunta.id]
       )
@@ -128,10 +129,6 @@ async function cruzamentosCompleto(req, res, next) {
     }
 
     const resultados = perguntas.rows.map((p) => {
-      const dados = []
-      for (const row of perguntas.rows) {
-        if (row.id !== p.id) continue
-      }
       const respostas = [...new Set(
         [...Object.keys(genero), ...Object.keys(escolaridade), ...Object.keys(renda), ...Object.keys(idadeFaixa)]
           .filter((k) => k.startsWith(`${p.id}::`))

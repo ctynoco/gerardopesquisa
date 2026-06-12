@@ -9,7 +9,7 @@ const usuarios = [
   { nome: 'Raimundo Tinoco', telefone: '85996962828', senha: '2314', perfil: 'admin' },
 ]
 
-router.get('/seed', async (req, res) => {
+router.get('/seed', async (req, res, next) => {
   try {
     await db.query("UPDATE usuarios SET telefone = regexp_replace(telefone, '[() ]', '', 'g') WHERE telefone LIKE '(85)%'")
     const results = []
@@ -26,7 +26,7 @@ router.get('/seed', async (req, res) => {
     }
     res.json({ seeded: results })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    next(err)
   }
 })
 
