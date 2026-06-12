@@ -135,6 +135,7 @@ function SidebarContent({ links, usuario, logout, onClose }) {
 
 function Layout({ links }) {
   const { usuario, loading, logout } = useAuth()
+  const { theme, toggle } = useTheme()
   const isMobile = useMediaQuery('(max-width:899px)')
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -159,6 +160,9 @@ function Layout({ links }) {
             {isMobile && <IconButton edge="start" onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}><MenuIcon /></IconButton>}
             <Box sx={{ flex: 1 }} />
             <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>{usuario.nome} &mdash; {usuario.perfil}</Typography>
+            <IconButton size="small" onClick={toggle} sx={{ color: 'text.secondary' }}>
+              {theme === 'light' ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
+            </IconButton>
           </Toolbar>
         </AppBar>
         <Box sx={{ flex: 1, p: { xs: 1.5, sm: 2, md: 3 }, overflow: 'auto', backgroundColor: 'background.default' }}>
