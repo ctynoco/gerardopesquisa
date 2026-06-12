@@ -131,4 +131,19 @@ async function painelSupervisao(req, res, next) {
   } catch (err) { next(err) }
 }
 
-module.exports = { painelSupervisao, producaoEntrevistadores }
+async function tendenciaDiaria(req, res, next) {
+  try {
+    const { pesquisa_id } = req.params
+    const result = await db.query(
+      `SELECT created_at::date AS dia, COUNT(*)::int AS total
+       FROM entrevistados
+       WHERE pesquisa_id = $1 AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+       GROUP BY created_at::date
+       ORDER BY dia`,
+      [pesquisa_id]
+    )
+    res.json({ dias: result.rows })
+  } catch (err) { next(err) }
+}
+
+module.exports = { painelSupervisao, producaoEntrevistadores, tendenciaDiaria }
